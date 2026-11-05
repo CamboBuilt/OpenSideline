@@ -19,9 +19,14 @@ test('nine-batter mode excludes bench players from the batting rotation',()=>{
   const g=game({rules:{preset:'adult',battingMode:'nine'}});
   assert.equal(replayGame(g).battingOrder.away.length,9);
   let current=g;
-  for(let i=0;i<9;i++)current=ball(current,'GROUND_OUT');
+  for(let i=0;i<9;i++){
+    while(replayGame(current).batting!=='away')
+      current=ball(current,'GROUND_OUT');
+    current=ball(current,'GROUND_OUT');
+  }
   const v=replayGame(current);
-  assert.equal(v.batter.id,'a1');
+  assert.equal(v.battingIndex.away,9);
+  assert.equal(v.battingOrder.away[v.battingIndex.away%9],'a1');
   assert.equal(v.playerStats.away.a10.PA,0);
   assert.equal(v.playerStats.away.a9.PA,1);
 });
