@@ -3,6 +3,8 @@ import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPl
 import { getQuickPlayPresets } from './quick-play.mjs';
 import { parseRosterImport, importedRosterText, matchImportedDefense } from './roster-import.mjs';
 import { summarizeSeason, seasonCsv } from './season-summary.mjs';
+import { isCloudConfigured, connectCloud } from './cloud-runtime.mjs';
+import { renderCloudPanel } from './cloud-panel.mjs';
 
 const STORAGE_KEY = 'opensideline:baseball:v1';
 const ARCHIVE_KEY = 'opensideline:baseball:archive:v1';
@@ -35,6 +37,15 @@ let showPlay = null;
 let fieldingDraft = null;
 let defenseDraft = null;
 let showLineup = false;
+let showCloud = false;
+let cloudBusy = false;
+let cloudGateway = null;
+let cloudUser = null;
+let cloudGames = [];
+let cloudTeams = [];
+let cloudMessage = '';
+let cloudTeamChoice = '';
+let cloudKnownVersions = new Map();
 let lineupSide='away';
 let importedSetupPlayers = {away:null,home:null};
 let feedback = '';
@@ -497,10 +508,100 @@ function downloadRosterTemplate() {
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+
+function cloudStatus(text){
+  cloudMessage=String(text??'').slice(0,250);
+  render();
+}
+async function refreshCloudData(){
+  if(!cloudGateway || !cloudUser) return;
+  const userId=cloudUser.id;
+  const [games,teams]=await Promise.all([cloudGateway.listGames(),cloudGateway.listTeams()]);
+  if(cloudUser?.id!==userId)return;
+  cloudGames=games;
+  cloudTeams=teams;
+  if(cloudTeamChoice && !teams.some(t=>t.id===cloudTeamChoice))cloudTeamChoice='';
+  render();
+}
+async function initializeCloud(){
+  if(!isCloudConfigured() || cloudGateway || cloudBusy)return;
+  cloudBusy=true;render();
+  try{
+    const gateway=await connectCloud();
+    cloudGateway=gateway;
+    gateway.onAuthStateChange((event,session)=>{
+      const nextUser=session?.user??null;
+      if(nextUser?.id!==cloudUser?.id){
+        cloudKnownVersions=new Map();
+        cloudGames=[];cloudTeams=[];cloudTeamChoice='';
+      }
+      cloudUser=nextUser;
+      if(event==='SIGNED_OUT')cloudMessage='Signed out. Your browser-local game is unchanged.';
+      render();
+    });
+    try{cloudUser=await gateway.getUser()}catch{cloudUser=null}
+    if(cloudUser)await refreshCloudData();
+  }catch(error){
+    cloudMessage=error.message||'Cloud connection failed.';
+  }finally{
+    cloudBusy=false;render();
+  }
+}
+function openCloud(){
+  showCloud=true;
+  showSetup=false;showPlay=null;fieldingDraft=null;
+  defenseDraft=null;showLineup=false;
+  render();
+  if(isCloudConfigured()&&!cloudGateway)void initializeCloud();
+}
+async function runCloudAction(action){
+  if(!cloudGateway || cloudBusy)return;
+  cloudBusy=true;render();
+  try{
+    if(action==='signout'){
+      await cloudGateway.signOut();
+      cloudUser=null;cloudGames=[];cloudTeams=[];
+      cloudKnownVersions.clear();cloudTeamChoice='';
+      cloudMessage='Signed out. Your local game is unchanged.';
+    }else if(action==='refresh'){
+      await refreshCloudData();
+      cloudMessage='Cloud list refreshed.';
+    }else if(action==='save'){
+      const snapshot=JSON.parse(JSON.stringify(game));
+      const expectedVersion=cloudKnownVersions.get(snapshot.id)??null;
+      const saved=await cloudGateway.saveGame(snapshot,{
+        expectedVersion,teamId:cloudTeamChoice||null,
+      });
+      cloudKnownVersions.set(snapshot.id,saved.version);
+      cloudMessage='Saved privately to your cloud account — revision '+saved.version+'.';
+      await refreshCloudData();
+    }
+  }catch(error){
+    cloudMessage=error.name==='CloudConflictError'
+      ?'Cloud version conflict. Download a local backup, then refresh and open the cloud version before trying again.'
+      :error.message||'Cloud request failed. Local scoring is still available.';
+  }finally{cloudBusy=false;render()}
+}
+function openCloudGame(index){
+  const entry=cloudGames[index];
+  if(!entry || !cloudUser)return;
+  try{
+    const snapshot=JSON.parse(JSON.stringify(entry.snapshot));
+    replayGame(snapshot);
+    if(game.events.length && game.id!==snapshot.id &&
+       !confirm('Open this cloud game? Your current game will be copied to your local archive first. Export a backup if needed.'))return;
+    archiveGame(game);
+    cloudKnownVersions.set(snapshot.id,entry.version);
+    showCloud=false;
+    cloudMessage='Cloud game opened locally. Save when you want to publish your next edits.';
+    commit(snapshot);
+  }catch(error){cloudStatus(error.message||'Invalid cloud game')}
+}
+
 function render() {
   const v = replayGame(game);
   document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
-  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (showLineup && displayMode === 'scorer' ? lineupModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (showLineup && displayMode === 'scorer' ? lineupModal(v) : '') + (showCloud && displayMode === 'scorer' ? renderCloudPanel({configured:isCloudConfigured(),loading:cloudBusy&&!cloudGateway,user:cloudUser,games:cloudGames,teams:cloudTeams,message:cloudMessage,selectedTeam:cloudTeamChoice},safe) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
 }
 function perform(event) {
   try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
