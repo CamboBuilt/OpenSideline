@@ -56,6 +56,20 @@ For backwards compatibility, events without annotations replay identically. Late
 
 Field positions/touches do **not** automatically award putouts and assists. A chain like 6–4–3 does not uniquely identify who recorded each out in every situation, so these statistics require a future explicit scorer decision.
 
+## Defensive lineup events (v0.2.4 preview)
+
+The `DEFENSIVE_LINEUP` event records a full position-to-player snapshot for one team, independent of batting order.
+
+```json
+{"type":"DEFENSIVE_LINEUP","side":"home","assignments":{"1":"pitcher-id","2":"catcher-id","3":"first-base-id","6":"shortstop-id"}}
+```
+
+Position keys are the baseball scorebook numbers **1 through 9**. Missing or null keys mean unassigned. Each non-null player ID must occur in that team's roster, and a player may occupy **at most one defensive position** in the same snapshot. The validation layer normalizes every lineup to nine slots. A new lineup event replaces the team's previous alignment while preserving prior events and older game replays. Lineup events do not increment outs, counts, scores or batting orders.
+
+Every `BALL_IN_PLAY` play-log item takes a copy of the defending team's lineup **before processing that play**. When a `PLAY_ANNOTATION` for that play supplies a position without an explicit player ID, the replay engine resolves the player from this *original play snapshot*, not the latest lineup. Explicit scorer-chosen player IDs take precedence. This makes later substitutions safe for historical fielding records.
+
+Lineups don't themselves award fielding putouts/assists, and roster changes currently start a new game, not in-game substitutions.
+
 ## Compatibility
 
 Older v0.1 games use `schemaVersion: 1`, where `BALL_IN_PLAY` events have **no `advances` field**. They continue to replay with their original simplified automatic runner rules, so existing JSON exports need no migration and are not silently reinterpreted. New events can be appended to an old game; the journal remains `schemaVersion: 1` because the extension is backward-compatible to the new reader. Older app versions may not understand the extension; retain an export before upgrading.
