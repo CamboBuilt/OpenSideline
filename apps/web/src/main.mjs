@@ -97,7 +97,7 @@ function scoreHeader(v, compact = false) {
 }
 function renderPlayLog(v) {
   const logs = v.playLog.slice(-12).reverse();
-  return logs.length ? `<div class="events">${logs.map((row,i) => `<div class="event"><div class="event-bullet ${i === 0 ? 'latest' : ''}"></div><div class="event-content"><div class="event-meta">${row.half === 'top' ? 'TOP' : 'BOT'} ${row.inning} <span>·</span> ${safe(row.offense)}</div><div class="event-label">${safe(row.label)}</div></div>${i === 0 ? '<span class="event-new">LATEST</span>' : ''}</div>`).join('')}</div>` : '<div class="empty-log">No plays yet. Record the first pitch to start the game.</div>';
+  return logs.length ? `<div class="events">${logs.map((row,i) => `<div class="event"><div class="event-bullet ${i === 0 ? 'latest' : ''}"></div><div class="event-content"><div class="event-meta">${row.half === 'top' ? 'TOP' : 'BOT'} ${row.inning} <span>·</span> ${safe(row.offense)}</div><div class="event-label">${safe(row.label)}</div></div>${i === 0 ? '<span class="event-new">LATEST</span>' : ''}${displayMode==='scorer' && game.events[row.index-1]?.type==='BALL_IN_PLAY' ? `<button class="event-fielding-btn" type="button" data-command="open-fielding" data-target="${row.index-1}">Fielding details</button>` : ''}</div>`).join('')}</div>` : '<div class="empty-log">No plays yet. Record the first pitch to start the game.</div>';
 }
 function renderStats(v) {
   const statsFor = (side) => `<section class="stat-block"><h4>${safe(game.teams[side].name)}</h4><div class="table-overflow"><table class="player-stats"><thead><tr><th>PLAYER</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OBP</th></tr></thead><tbody>${game.teams[side].roster.map(p => {
