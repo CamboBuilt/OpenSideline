@@ -257,6 +257,7 @@ export function replayGame(game) {
   assert(game && game.schemaVersion === 1 && game.teams && Array.isArray(game.events), 'Invalid or unsupported game file.');
   // Incomplete/invalid external data must not be trusted simply because it parses as JSON.
   const validated = {
+    events: game.events, // annotation lookups use the already validated, ordered journal
     teams: {
       home: { name: sanitize(game.teams.home?.name, 60), roster: validateRoster(game.teams.home?.roster, 'home') },
       away: { name: sanitize(game.teams.away?.name, 60), roster: validateRoster(game.teams.away?.roster, 'away') },
