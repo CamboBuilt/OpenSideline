@@ -9,7 +9,8 @@
 - [x] Automated scoring tests
 
 ## v0.2: Baseball scoring correctness
-- [ ] Structured in-play runner advancement and all scored play combinations
+- [x] Explicit, validated runner destinations on ball-in-play events (Issue #1 candidate)
+- [ ] Complete third-out, appeal/force, and timing-sensitive run scoring rules
 - [ ] Lineup changes, pinch runners, substitutions, designated hitter rules
 - [ ] Pitching stats, wild pitches, passed balls, pickoffs, fielding stats
 - [ ] Different game length, mercy rules, tie and extra-inning rules
