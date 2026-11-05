@@ -43,7 +43,7 @@ test('preset can put a runner out while recording a hit',()=>{
   assert.equal(v.hits.away,2);
 });
 test('shortcuts exclude a base collision (runner already going to third)',()=>{
-  const g=hit(hit(game(),'SINGLE'),'DOUBLE');
+  const g=hit(hit(game(),'SINGLE'),'SINGLE');
   const labels=choices(g,'SINGLE').map(p=>p.label);
   assert.equal(labels.includes('Runner on 1st to 3rd'),false);
 });
