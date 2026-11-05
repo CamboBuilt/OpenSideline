@@ -2,8 +2,27 @@ import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPl
 
 import { getQuickPlayPresets } from './quick-play.mjs';
 import { parseRosterImport, importedRosterText, matchImportedDefense } from './roster-import.mjs';
+import { summarizeSeason, seasonCsv } from './season-summary.mjs';
 
 const STORAGE_KEY = 'opensideline:baseball:v1';
+const ARCHIVE_KEY = 'opensideline:baseball:archive:v1';
+function readArchive() {
+  try {
+    const data=JSON.parse(localStorage.getItem(ARCHIVE_KEY)??'[]');
+    if(!Array.isArray(data))return [];
+    return data.slice(-20).filter(g=>{
+      try{replayGame(g);return true;}catch{return false;}
+    });
+  }catch{return [];}
+}
+function archiveGame(g){
+  if(!g?.events?.length)return;
+  try{
+    const items=readArchive().filter(item=>item.id!==g.id);
+    items.push(g);
+    localStorage.setItem(ARCHIVE_KEY,JSON.stringify(items.slice(-20)));
+  }catch{ /* Local storage may be full; game exports remain available. */ }
+}
 const app = document.querySelector('#app');
 const TAB_ID = Math.random().toString(36).slice(2);
 const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('opensideline-baseball-v1') : null;
@@ -105,11 +124,43 @@ function renderPlayLog(v) {
   return logs.length ? `<div class="events">${logs.map((row,i) => `<div class="event"><div class="event-bullet ${i === 0 ? 'latest' : ''}"></div><div class="event-content"><div class="event-meta">${row.half === 'top' ? 'TOP' : 'BOT'} ${row.inning} <span>·</span> ${safe(row.offense)}</div><div class="event-label">${safe(row.label)}</div></div>${i === 0 ? '<span class="event-new">LATEST</span>' : ''}${displayMode==='scorer' && game.events[row.index-1]?.type==='BALL_IN_PLAY' ? `<button class="event-fielding-btn" type="button" data-command="open-fielding" data-target="${row.index-1}">Fielding details</button>` : ''}</div>`).join('')}</div>` : '<div class="empty-log">No plays yet. Record the first pitch to start the game.</div>';
 }
 function renderStats(v) {
-  const statsFor = (side) => `<section class="stat-block"><h4>${safe(game.teams[side].name)}</h4><div class="table-overflow"><table class="player-stats"><thead><tr><th>PLAYER</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OBP</th></tr></thead><tbody>${game.teams[side].roster.map(p => {
-    const s = v.playerStats[side][p.id];
-    return `<tr><td><span class="jersey">${safe(p.number || '–')}</span> ${safe(p.name)}</td><td>${s.AB}</td><td>${s.H}</td><td>${s.R}</td><td>${s.RBI}</td><td>${s.BB}</td><td>${formatAvg(s.H,s.AB)}</td><td>${formatObp(s)}</td></tr>`;
-  }).join('')}</tbody></table></div></section>`;
-  return `${statsFor('away')}${statsFor('home')}<p class="fineprint">New plays ask for each runner destination and RBI decision. Existing v0.1 records retain simplified historical rules. Pitching stats, substitutions and some third-out judgments remain unsupported.</p>`;
+  const statsFor=side=>{
+    const rows=game.teams[side].roster.map(p=>{
+      const b=v.playerStats[side][p.id],f=v.fieldingStats[side][p.id],pitch=v.pitchingStats[side][p.id];
+      const slot=v.battingOrder[side].indexOf(p.id);
+      return `<tr><td><span class="jersey">${safe(p.number||'–')}</span> ${safe(p.name)}<small class="stat-roster-tag">${slot>=0?'Bats #'+(slot+1):'Bench'}</small></td>
+        <td>${b.AB}</td><td>${b.H}</td><td>${b.R}</td><td>${b.RBI}</td><td>${b.BB}</td><td>${formatAvg(b.H,b.AB)}</td><td>${formatObp(b)}</td>
+        <td>${f.PO}</td><td>${f.A}</td><td>${f.E}</td><td>${f.DP}</td></tr>`;
+    }).join('');
+    const pitchers=game.teams[side].roster.map(p=>{
+      const x=v.pitchingStats[side][p.id];
+      if(!x.P&&!x.BF&&!Object.values(v.defenseLineup[side]).includes(p.id))return '';
+      return `<tr><td><span class="jersey">${safe(p.number||'–')}</span> ${safe(p.name)}</td>
+        <td>${x.P}</td><td>${x.BF}</td><td>${x.H}</td><td>${x.BB}</td><td>${x.SO}</td></tr>`;
+    }).join('');
+    return `<section class="stat-block"><h4>${safe(game.teams[side].name)}</h4>
+      <div class="table-overflow"><table class="player-stats"><thead><tr><th>PLAYER</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OBP</th><th>PO</th><th>A</th><th>E</th><th>DP</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+      <h4 class="stat-secondary-title">Pitching (recorded pitches and batters faced only)</h4>
+      <div class="table-overflow"><table class="player-stats"><thead><tr><th>PITCHER</th><th>PITCHES</th><th>BF</th><th>H</th><th>BB</th><th>SO</th></tr></thead>
+      <tbody>${pitchers||'<tr><td colspan="6">Assign a pitcher to track basic pitching stats.</td></tr>'}</tbody></table></div>
+    </section>`;
+  };
+  const spray=Object.entries(HIT_LOCATIONS).map(([zone,label])=>{
+    const count=v.playLog.filter(p=>p.fielding?.location===zone).length;
+    return `<span class="spray-zone" title="${safe(label)}">${safe(zone)} <b>${count}</b></span>`;
+  }).join('');
+  const season=summarizeSeason([...readArchive(),game]);
+  const totals=season.players.filter(p=>p.totals.PA>0||p.totals.PO>0||p.totals.A>0);
+  return `${statsFor('away')}${statsFor('home')}
+    <section class="stat-block"><h4>Ball-location summary</h4><p class="fineprint">Approximate marked zones in this game; unmarked balls are excluded.</p>
+      <div class="spray-zones">${spray}</div></section>
+    <section class="stat-block"><div class="stat-action-title"><h4>Local season totals · ${season.games} saved game${season.games===1?'':'s'}</h4>
+      <button type="button" class="btn subtle" data-command="export-season">Export season CSV</button></div>
+      <div class="table-overflow"><table class="player-stats"><thead><tr><th>PLAYER</th><th>TEAM</th><th>G</th><th>AB</th><th>H</th><th>RBI</th><th>PO</th><th>A</th><th>E</th></tr></thead>
+      <tbody>${totals.slice(0,40).map(p=>`<tr><td>${safe(p.name)}</td><td>${safe(p.team)}</td><td>${p.games}</td><td>${p.totals.AB}</td><td>${p.totals.H}</td><td>${p.totals.RBI}</td><td>${p.totals.PO}</td><td>${p.totals.A}</td><td>${p.totals.E}</td></tr>`).join('')||'<tr><td colspan="9">Score a few plays to populate season totals.</td></tr>'}</tbody></table></div>
+    </section>
+    <p class="fineprint">Fielding PO/A/E/DP credits are scorer-assigned, not automatically inferred. Pitch count is incomplete if at-bats are logged without individual pitches. The season archive is private to this browser and is not synchronized across devices.</p>`;
 }
 function playActions(v) {
   const hasRunner = [1,2,3].some(base => v.bases[base]);
@@ -455,6 +506,15 @@ function perform(event) {
   try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
   catch(e) { toast(e.message || 'Could not record this play.'); return false; }
 }
+function downloadSeason(){
+  const summary=summarizeSeason([...readArchive(),game]);
+  const csv=seasonCsv(summary);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='opensideline-season-stats.csv';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function downloadGame() {
   const json = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(json);
@@ -511,6 +571,7 @@ app.addEventListener('click', event => {
   switch (trigger.dataset.command) {
     case 'undo': if (game.events.length) commit(undoEvent(game)); break;
     case 'export': downloadGame(); break;
+    case 'export-season': downloadSeason();break;
     case 'open-setup': showSetup=true;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;importedSetupPlayers={home:null,away:null};render();break;
     case 'open-defense': showLineup=false;openDefenseEditor(replayGame(game).fielding);break;
     case 'open-lineup': showLineup=true;lineupSide=replayGame(game).batting;showSetup=false;fieldingDraft=null;defenseDraft=null;showPlay=null;render();break;
@@ -681,7 +742,7 @@ app.addEventListener('submit', e => {
   }
   if (e.target.id !== 'setup-form') return;
   e.preventDefault();
-  if (game.events.length && !confirm('Start a new game? Current plays will be cleared.')) return;
+  if (game.events.length && !confirm('Start a new game? Current plays will be cleared. It will first be saved to your local season archive.')) return;
   const form = new FormData(e.target);
   try {
     const awayRoster=parseRoster(form.get('awayRoster'),'away');
@@ -699,6 +760,7 @@ app.addEventListener('submit', e => {
       const assignments=matchImportedDefense(next.teams[side].roster, importedSetupPlayers[side]);
       if(Object.keys(assignments).length)next=appendEvent(next,{type:'DEFENSIVE_LINEUP',side,assignments,at:new Date().toISOString()});
     }
+    archiveGame(game);
     importedSetupPlayers={home:null,away:null};
     showSetup=false;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;selectedTab='plays'; showMoreActions=false;
     commit(next); toast('New game created. Ready for the first pitch.');
