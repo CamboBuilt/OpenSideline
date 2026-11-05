@@ -11,7 +11,8 @@ export { defaultPlayAdvances } from './advancement.mjs';
 export const ENGINE_VERSION = '0.2.0';
 export const PLAY_RESULTS = Object.freeze({
   SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple', HOME_RUN: 'Home run',
-  OUT: 'Out in play', ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
+  OUT: 'Other out', GROUND_OUT: 'Groundout', LINE_OUT: 'Lineout', FLY_OUT: 'Flyout',
+  ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
   FIELDERS_CHOICE: "Fielder's choice",
 });
 const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT']);
@@ -197,7 +198,7 @@ function process(s, game, event) {
         endHalfIfNeeded(s);
       } else {
         finishPA(s, game, { ab: true });
-        s.outs++; label = `${batter.name} • out in play`;
+        s.outs++; label = `${batter.name} • ${PLAY_RESULTS[result]}`;
         endHalfIfNeeded(s);
       }
       break;
