@@ -390,6 +390,16 @@ export function replayGame(game) {
   assert(game.events.length <= 10000, 'Game has too many events.');
   const state = freshView(validated);
   for (const event of game.events) process(state, validated, event);
+  // Derive fielding totals only from the latest annotation for each play.
+  // Re-annotating an earlier ball cannot double-count credited fielders.
+  for(const log of state.playLog){
+    const credits=log.fielding?.credits;
+    if(!credits)continue;
+    const side=log.half==='top'?'home':'away';
+    for(const [key,stat] of [['putouts','PO'],['assists','A'],['errors','E'],['doublePlays','DP']]){
+      for(const id of credits[key]??[]) state.fieldingStats[side][id][stat]++;
+    }
+  }
   state.batter = batterOf(state, validated);
   state.batting = battingSide(state);
   state.fielding = fieldingSide(state);
