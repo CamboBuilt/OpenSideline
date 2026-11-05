@@ -1,0 +1,40 @@
+# Baseball play events — v0.2 candidate
+
+OpenSideline stores game actions in an append-only, JSON-serializable `events[]` journal. `replayGame(game)` recomputes score, bases, outs, inning and batter stats. `undoEvent(game)` removes the last event without mutating earlier game objects.
+
+## Explicit ball-in-play advancement
+
+New scorer interactions record `BALL_IN_PLAY` events with `advances`:
+
+```json
+{
+  "type": "BALL_IN_PLAY",
+  "result": "SINGLE",
+  "advances": {
+    "batter": "FIRST",
+    "runners": { "2": "HOME" },
+    "rbi": ["2"]
+  }
+}
+```
+
+`batter` is a required destination determined by `result`: SINGLE → FIRST, DOUBLE → SECOND, TRIPLE → THIRD, HOME_RUN → HOME, ERROR → FIRST, OUT → OUT, SAC_FLY → OUT, FIELDERS_CHOICE → FIRST.
+
+`runners` is a map of **starting base** (`"1"`, `"2"`, `"3"`) to that runner's final destination, which may be `HOLD`, `SECOND`, `THIRD`, `HOME`, or `OUT` as appropriate to the starting base. **Every originally occupied base must have exactly one decision**, even when the runner stays put. The scorer may independently decide that a runner scores from second on a single, holds on a double, or is retired while the batter reaches base.
+
+`rbi` is an explicit list of those starting-base keys whose scored runs are credited as RBI to this batter. The scorer must decide RBI credit; defaults in the interface are suggestions. A home-run batter is automatically credited with an RBI for their own run. `SAC_FLY` requires a runner to score from third and gives that runner an RBI. For `ERROR`, `OUT`, and `FIELDERS_CHOICE` there is no default RBI (scorer may award one if justified).
+
+Validation rejects impossible destinations, duplicate bases, missing/nonexistent runners, more than three outs, incompatible batter destinations and RBI claims for players who did not score. A runner may only advance, hold, score, or be put out—not move backward.
+
+## Compatibility
+
+Older v0.1 games use `schemaVersion: 1`, where `BALL_IN_PLAY` events have **no `advances` field**. They continue to replay with their original simplified automatic runner rules, so existing JSON exports need no migration and are not silently reinterpreted. New events can be appended to an old game; the journal remains `schemaVersion: 1` because the extension is backward-compatible to the new reader. Older app versions may not understand the extension; retain an export before upgrading.
+
+## Limitations — not yet an official scorebook
+
+- **Runs on a play producing the third out are rejected** until force outs, timing, passing runners and appeal plays can be modeled. This prevents silently counting runs that might not count. Scorekeepers will see a validation error instead of an inaccurate score.
+- Hit, error, fielder's choice, sacrifice and RBI decisions must be made by a knowledgeable scorer. The app cannot currently verify official scoring judgment, caught stealing rules, force-vs-tag decisions, fielding assists, earned runs or pitchers of record.
+- Pitching changes, pinch runners, substitutions, run responsibility and league-specific rules are separate follow-up features.
+- The app saves locally to your browser, not a synced server. Don't enter private youth-athlete details into public demos.
+
+See [Roadmap](ROADMAP.md) and issue #1 for remaining rule coverage.
