@@ -28,6 +28,15 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.2.1: Faster, brighter scoring (preview)
+
+- A high-contrast, field-light scorer with a compact **sticky** score/count/runner bar.
+- Main pitch and hit buttons remain on one screen. Additional play types and manual runner controls are optional, expandable actions.
+- When bases are empty, a hit or out is recorded with one tap. When runners are on, a bottom-sheet presents **validated quick-save suggestions** plus accessible runner-by-runner choices.
+- Suggestions are not automatic official-scoring judgments; confirm RBI decisions and review advanced plays.
+
+This is a browser-local MVP. Do not use real minors’ personal data in the demo.
+
 ## What works today
 
 - Create a new baseball game with editable home/away names and batting-order rosters.
