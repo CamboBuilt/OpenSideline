@@ -42,6 +42,12 @@ export function getQuickPlayPresets(game, view, result) {
   if (view.bases[1] && result === 'DOUBLE') {
     suggest('Runner on 1st holds', a => { a.runners['1'] = 'HOLD'; });
   }
+  if (view.bases[3] && result === 'GROUND_OUT' && view.outs < 2) {
+    suggest('Runner on 3rd scores (RBI)', a => {
+      a.runners['3'] = 'HOME';
+      if (!a.rbi.includes('3')) a.rbi.push('3');
+    });
+  }
   if (view.bases[3] && result === 'OUT' && view.outs < 2) {
     suggest('Runner on 3rd scores', a => {
       a.runners['3'] = 'HOME';
