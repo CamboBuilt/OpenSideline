@@ -284,6 +284,7 @@ function openFieldingEditor(target) {
   fieldingDraft={
     target, location:prior?.location ?? null,
     sequence:(prior?.sequence ?? []).map(x=>({position:x.position,playerId:x.playerId ?? null})),
+    credits:prior?.credits??{putouts:[],assists:[],errors:[],doublePlays:[]},
   };
   render();
 }
@@ -309,6 +310,10 @@ function fieldingModal(v) {
         <option value="">Player not assigned</option>
         ${defenders.map(p=>`<option value="${safe(p.id)}" ${(step.playerId??originalDefense[String(step.position)])===p.id?'selected':''}>${safe('#'+(p.number||'—')+' '+p.name)}</option>`).join('')}
       </select></label>
+      <div class="fielder-credit-choice">${[['putouts','PO'],['assists','A'],['errors','E'],['doublePlays','DP']].map(([key,label])=>{
+        const id=step.playerId??originalDefense[String(step.position)];
+        return `<label><input type="checkbox" name="field-${key}-${i}" ${id&&fieldingDraft.credits[key]?.includes(id)?'checked':''}/> ${label}</label>`;
+      }).join('')}</div>
     </div>`).join('');
   return `<div class="modal-backdrop" data-command="close-fielding"><div class="modal fielding-modal" role="dialog" aria-modal="true" aria-labelledby="fielding-title">
     <div class="modal-head"><div><div class="eyebrow">BALL LOCATION + DEFENSIVE PLAY</div><h2 id="fielding-title">Mark the play</h2>
@@ -332,7 +337,7 @@ function fieldingModal(v) {
           <button type="button" data-command="clear-fielders">Clear</button></div>
         ${touches ? `<div class="fielder-touches"><p>Players suggested from the saved defensive lineup for this play. Override any position if needed:</p>${touches}</div>`:''}
       </section></div>
-      <p class="play-warning">Positions 1–9 follow baseball's scoring shorthand. Player names are never guessed from batting order. Putouts and assists are not yet calculated.</p>
+      <p class="play-warning">Positions 1–9 follow baseball's scoring shorthand. Mark PO (putout), A (assist), E (error), or DP for the appropriate player. These are explicit scorer-awarded stats, not automatic official rulings.</p>
       <p class="play-form-error" data-fielding-error role="alert" hidden></p>
       <div class="modal-footer"><button class="btn subtle" type="button" data-command="close-fielding">Cancel</button><button class="btn primary" type="submit">Save fielding details</button></div>
     </form>
@@ -635,8 +640,21 @@ app.addEventListener('submit', e => {
     if (!fieldingDraft) return;
     const {target,location,sequence}=fieldingDraft;
     try {
+      const form=new FormData(e.target);
+      const log=replayGame(game).playLog.find(row=>row.index===target+1);
+      const originalDefense=log?.defenseAssignments??{};
+      const credits={putouts:[],assists:[],errors:[],doublePlays:[]};
+      for(let i=0;i<sequence.length;i++){
+        const step=sequence[i];
+        const id=step.playerId??originalDefense[String(step.position)]??null;
+        for(const key of Object.keys(credits)){
+          if(form.get('field-'+key+'-'+i)!=='on')continue;
+          if(!id)throw new Error('Assign a player before awarding a fielding stat.');
+          if(!credits[key].includes(id))credits[key].push(id);
+        }
+      }
       const next=appendEvent(game,{type:'PLAY_ANNOTATION',target,
-        fielding:{location,sequence:sequence.map(({position,playerId})=>({position,playerId}))},
+        fielding:{location,sequence:sequence.map(({position,playerId})=>({position,playerId})),credits},
         at:new Date().toISOString()});
       fieldingDraft=null;commit(next);
     } catch(error) {
