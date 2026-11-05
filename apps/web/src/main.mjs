@@ -901,3 +901,10 @@ channel?.addEventListener('message', e => {
 });
 render();
 if (displayMode==='scorer' && isCloudConfigured()) void initializeCloud();
+if(typeof navigator!=='undefined' && 'serviceWorker' in navigator &&
+   (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(()=>{ /* Offline install is optional; local scoring still works. */ });
+  });
+}
