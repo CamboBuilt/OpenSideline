@@ -61,7 +61,7 @@ const toRecord = (record,index) => {
   if(!record || typeof record!=='object'||Array.isArray(record)) throw new Error('Every player must be a record.');
   const name=String(record.name??record.player??record.playerName??'').trim();
   const number=String(record.number??record.jersey??record.jerseyNumber??index+1).trim();
-  if(!name || name.length>60)throw new Error(`Player ${index+1}: name must be 1–60 characters.`);
+  if(!name || name.length>60 || /[\\r\\n]/.test(name))throw new Error(`Player ${index+1}: name must be 1–60 characters.`);
   if(!/^\d{1,3}$/.test(number))throw new Error(`Player ${index+1}: jersey number must have 1–3 digits.`);
   const position=parsePosition(record.position??record.pos??null);
   const orderValue=record.batting_order??record.battingOrder??record.order;
