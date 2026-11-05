@@ -360,7 +360,7 @@ function defenseModal(v){
   </div></div>`;
 }
 function downloadRosterTemplate() {
-  const csv='number,name,position,batting_order\\n12,Alex Rivera,SS,1\\n7,Jordan Brooks,CF,2\\n24,Taylor Lane,P,3\\n';
+  const csv=['number,name,position,batting_order','12,Alex Rivera,SS,1','7,Jordan Brooks,CF,2','24,Taylor Lane,P,3'].join('\n')+'\n';
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const link=document.createElement('a');
