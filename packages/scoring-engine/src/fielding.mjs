@@ -38,7 +38,23 @@ export function validateFieldingAnnotation(fielding, roster) {
   });
   assert(location!==null || validated.length>0,
     'Choose at least a ball location or a defensive fielder.');
-  return {location,sequence:validated};
+  const credits=fielding.credits;
+  let validCredits;
+  if(credits!==undefined){
+    assert(object(credits),'Fielding credits must be an object.');
+    const keys=['putouts','assists','errors','doublePlays'];
+    assert(Object.keys(credits).every(key=>keys.includes(key)),'Unknown fielding credit.');
+    validCredits={};
+    for(const key of keys){
+      const items=credits[key]??[];
+      assert(Array.isArray(items)&&items.length<=9,'Fielding credit list is invalid.');
+      assert(new Set(items).size===items.length,'Duplicate fielding credit.');
+      assert(items.every(id=>typeof id==='string'&&players.has(id)),
+        'Fielding credits must identify actual players on the defensive roster.');
+      validCredits[key]=[...items];
+    }
+  }
+  return {location,sequence:validated,...(validCredits?{credits:validCredits}:{})};
 }
 
 export function describeFielding(fielding, roster) {
