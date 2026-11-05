@@ -28,6 +28,14 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.2.3: Fielding positions + ball location (preview)
+
+After a hit or out, select **Add fielding** next to the last batted-ball play, or choose **Fielding details** on an earlier play in the game history. Tap a location on the field and tap the numbered fielders in the sequence of their involvement (e.g. 6–3 or 4–6–3); assign actual defender names from the defensive team's roster. Common defensive chains are one-tap presets. Marking these details is optional to preserve fast scoring.
+
+Each fielding annotation becomes a separate journal event, so you can undo it without losing the at-bat. The play log and JSON export preserve the annotated ball zone, numbered sequence and player IDs.
+
+**Limits:** A field location is an approximate zone, not a GPS coordinate or spray chart. A fielding chain describes involved defenders but does not yet assign putouts or assists, because double plays and other scoring situations require more information. Annotations are stored only in this browser until cross-device sync is built.
+
 ## v0.2.2: Groundouts, lineouts and flyouts (preview)
 
 The main scoring screen now has separate **Ground out**, **Line out** and **Fly out** buttons. These record distinct play descriptions, award a batter a plate appearance and at-bat, and record an out without a hit. When runners are aboard, you can hold/advance/retire runners in the same quick sheet; common groundout RBI advancement from third is offered as a scorer-reviewed shortcut. **Sacrifice fly remains a separate action** in More plays because its at-bat/statistical treatment differs. The generic **Other out** remains available for unusual plays. Fielding positions, putouts and assists are not yet modeled.
