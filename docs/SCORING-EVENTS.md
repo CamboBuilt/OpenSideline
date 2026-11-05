@@ -26,6 +26,12 @@ New scorer interactions record `BALL_IN_PLAY` events with `advances`:
 
 Validation rejects impossible destinations, duplicate bases, missing/nonexistent runners, more than three outs, incompatible batter destinations and RBI claims for players who did not score. A runner may only advance, hold, score, or be put out—not move backward.
 
+## Batted-ball out types (v0.2.2 preview)
+
+`BALL_IN_PLAY` may now have `result: "GROUND_OUT"`, `"LINE_OUT"`, or `"FLY_OUT"` in addition to the backwards-compatible `"OUT"` generic result. All four retire the batter, record an at-bat and plate appearance, and reset the count; none records a hit. They retain their distinct labels in play-by-play and JSON exports. Existing legacy `"OUT"` events remain readable.
+
+Runner decisions are still governed by `advances`. The scorer can record a runner advancing or being doubled off on the same batted ball. Groundouts can credit a scorer-confirmed RBI for a runner scoring from third. **Sacrifice flies must use `"SAC_FLY"` rather than `"FLY_OUT"`** so the batter receives a sacrifice fly rather than an at-bat. Precise defensive fielder positions (e.g. 6-3), assists, and putouts are future work.
+
 ## Compatibility
 
 Older v0.1 games use `schemaVersion: 1`, where `BALL_IN_PLAY` events have **no `advances` field**. They continue to replay with their original simplified automatic runner rules, so existing JSON exports need no migration and are not silently reinterpreted. New events can be appended to an old game; the journal remains `schemaVersion: 1` because the extension is backward-compatible to the new reader. Older app versions may not understand the extension; retain an export before upgrading.
