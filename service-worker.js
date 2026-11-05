@@ -19,10 +19,9 @@ const shellPaths=new Set(SHELL);
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE);
-    // Individual failures do not prevent installation; inspect offline test
-    // results before treating a deployment as a reliable offline release.
-    await Promise.allSettled(SHELL.map(url=>cache.add(url)));
-    await self.skipWaiting();
+    // Only install an offline-capable version when its entire shell is cached.
+    // Do not call skipWaiting: a new release must not replace a live scorer midgame.
+    await cache.addAll(SHELL);
   })());
 });
 self.addEventListener('activate',event=>{
@@ -44,7 +43,10 @@ self.addEventListener('fetch',event=>{
     const cache=await caches.open(CACHE);
     try{
       const response=await fetch(request);
-      if(response.ok && !navigation && !target.search)await cache.put(request,response.clone());
+      if(response.ok && !navigation && !target.search){
+        try{await cache.put(request,response.clone())}
+        catch{ /* Storage quota must never break online scoring. */ }
+      }
       return response;
     }catch(error){
       const saved=await cache.match(request);
