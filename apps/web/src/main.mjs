@@ -210,7 +210,7 @@ function renderScorer(v) {
     <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
       <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="open-lineup">${icon('people',19)} Batting & substitutions</button><button class="nav-item" data-command="open-cloud">${icon('share',19)} My OpenSideline</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
       <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
-      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.2.5 preview</div></div>
+      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.3 cloud alpha</div></div>
     </aside>
     <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-cloud" title="Account and private cloud saves">${icon('people',16)} ${cloudUser?'Account':'Cloud'}</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-lineup">${icon('people',16)} Lineup</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
       <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Live scorer<span class="accent-dot">.</span></h1><p>Keep your eyes on the game, not the menus.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
@@ -230,7 +230,7 @@ function renderScorer(v) {
         <div class="timeline-bottom"><div>${icon('info',16)} <span>Game data is saved in this browser only.</span></div><button data-command="export">Export game ${icon('arrow',15)}</button></div>
       </section></div>
       <details class="score-breakdown"><summary>Inning-by-inning score</summary>${lineScore(v)}</details>
-      <div class="footer-note"><span>OpenSideline <b>v0.2.5 preview</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
+      <div class="footer-note"><span>OpenSideline <b>v0.3 cloud alpha</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
     </div></main></div>`;
 }
 function renderSpectator(v) {
