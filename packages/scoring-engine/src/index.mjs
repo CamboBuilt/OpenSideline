@@ -9,18 +9,22 @@
 import { applyExplicitPlay } from './advancement.mjs';
 import { validateFieldingAnnotation, describeFielding } from './fielding.mjs';
 import { emptyDefensiveLineup, validateDefensiveLineup } from './defensive-lineup.mjs';
+import { normalizeGameRules, chooseInitialBattingOrder, validateBattingOrder } from './game-day-rules.mjs';
+export { LEAGUE_PRESETS, normalizeGameRules } from './game-day-rules.mjs';
 export { emptyDefensiveLineup } from './defensive-lineup.mjs';
 export { FIELDING_POSITIONS, HIT_LOCATIONS } from './fielding.mjs';
 export { defaultPlayAdvances } from './advancement.mjs';
-export const ENGINE_VERSION = '0.2.0';
+export const ENGINE_VERSION = '0.2.5';
 export const PLAY_RESULTS = Object.freeze({
   SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple', HOME_RUN: 'Home run',
   OUT: 'Other out', GROUND_OUT: 'Groundout', LINE_OUT: 'Lineout', FLY_OUT: 'Flyout',
   ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
   FIELDERS_CHOICE: "Fielder's choice",
 });
-const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT', 'PLAY_ANNOTATION', 'DEFENSIVE_LINEUP']);
+const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT', 'PLAY_ANNOTATION', 'DEFENSIVE_LINEUP', 'LINEUP_SUBSTITUTION', 'PINCH_RUNNER', 'PITCHER_CHANGE']);
 const STATS = () => ({ PA: 0, AB: 0, H: 0, R: 0, RBI: 0, BB: 0, SO: 0, HBP: 0, doubles: 0, triples: 0, HR: 0, SF: 0, SB: 0, CS: 0 });
+const PITCH_STATS = () => ({P:0,Balls:0,Strikes:0,BF:0,H:0,BB:0,SO:0,HBP:0});
+const FIELD_STATS = () => ({PO:0,A:0,E:0,DP:0});
 const assert = (condition, text) => { if (!condition) throw new Error(text); };
 const sanitize = (str, max = 50) => String(str ?? '').trim().slice(0, max);
 const defaultRoster = (prefix) => Array.from({ length: 9 }, (_, i) => ({ id: `${prefix}-${i + 1}`, number: String(i + 1), name: `Player ${i + 1}` }));
@@ -38,18 +42,34 @@ function validateRoster(roster, prefix) {
   });
 }
 
-export function createGame({ homeName = 'Home Hawks', awayName = 'Visiting Tigers', homeRoster, awayRoster } = {}) {
-  const nameHome = sanitize(homeName, 60), nameAway = sanitize(awayName, 60);
-  assert(nameHome && nameAway, 'Both teams need names.');
+export function createGame({
+  homeName='Home Hawks',awayName='Visiting Tigers',homeRoster,awayRoster,
+  homeBattingOrder,awayBattingOrder,rules:rulesInput,
+} = {}) {
+  const nameHome=sanitize(homeName,60),nameAway=sanitize(awayName,60);
+  assert(nameHome&&nameAway,'Both teams need names.');
+  const rules=normalizeGameRules(rulesInput ?? {});
+  const home=validateRoster(homeRoster ?? defaultRoster('home'),'home');
+  const away=validateRoster(awayRoster ?? defaultRoster('away'),'away');
+  if(rules.battingMode==='nine'){
+    assert(home.length>=9 && away.length>=9,'Nine-batter mode requires at least nine roster players per team.');
+  }
+  const homeOrder=chooseInitialBattingOrder(home,rules,homeBattingOrder);
+  const awayOrder=chooseInitialBattingOrder(away,rules,awayBattingOrder);
+  if(rules.battingMode==='nine')
+    assert(homeOrder.length===9&&awayOrder.length===9,'Nine-batter mode requires exactly nine active batters per team.');
+  if(rules.battingMode==='continuous')
+    assert(homeOrder.length===home.length&&awayOrder.length===away.length,
+      'Continuous mode must include every roster player in the batting order.');
   return {
-    schemaVersion: 1, engineVersion: ENGINE_VERSION,
-    id: `game-${Date.now().toString(36)}`,
-    createdAt: new Date().toISOString(),
-    teams: {
-      home: { name: nameHome, roster: validateRoster(homeRoster ?? defaultRoster('home'), 'home') },
-      away: { name: nameAway, roster: validateRoster(awayRoster ?? defaultRoster('away'), 'away') },
+    schemaVersion:1,engineVersion:ENGINE_VERSION,
+    id:`game-${Date.now().toString(36)}`,createdAt:new Date().toISOString(),
+    rules,
+    teams:{
+      home:{name:nameHome,roster:home,battingOrder:homeOrder},
+      away:{name:nameAway,roster:away,battingOrder:awayOrder},
     },
-    events: [],
+    events:[],
   };
 }
 
@@ -59,7 +79,22 @@ function freshView(game) {
     bases: { 1: null, 2: null, 3: null },
     scores: { home: 0, away: 0 }, hits: { home: 0, away: 0 }, errors: { home: 0, away: 0 },
     lineScore: { home: {}, away: {} },
-    battingIndex: { home: 0, away: 0 },
+    battingIndex: {home:0,away:0},
+    battingOrder:{
+      home:validateBattingOrder(game.teams.home.battingOrder ?? game.teams.home.roster.map(p=>p.id),game.teams.home.roster),
+      away:validateBattingOrder(game.teams.away.battingOrder ?? game.teams.away.roster.map(p=>p.id),game.teams.away.roster),
+    },
+    lineupRemoved:{home:[],away:[]},
+    substitutions:[],
+    rules:normalizeGameRules(game.rules??{}),
+    pitchingStats:{
+      home:Object.fromEntries(game.teams.home.roster.map(p=>[p.id,PITCH_STATS()])),
+      away:Object.fromEntries(game.teams.away.roster.map(p=>[p.id,PITCH_STATS()])),
+    },
+    fieldingStats:{
+      home:Object.fromEntries(game.teams.home.roster.map(p=>[p.id,FIELD_STATS()])),
+      away:Object.fromEntries(game.teams.away.roster.map(p=>[p.id,FIELD_STATS()])),
+    },
     defenseLineup: {home:emptyDefensiveLineup(),away:emptyDefensiveLineup()},
     playerStats: {
       home: Object.fromEntries(game.teams.home.roster.map(p => [p.id, STATS()])),
@@ -71,8 +106,9 @@ function freshView(game) {
 const battingSide = (s) => s.half === 'top' ? 'away' : 'home';
 const fieldingSide = (s) => s.half === 'top' ? 'home' : 'away';
 const batterOf = (s, game) => {
-  const side = battingSide(s), roster = game.teams[side].roster;
-  return roster[s.battingIndex[side] % roster.length];
+  const side=battingSide(s),roster=game.teams[side].roster;
+  const order=s.battingOrder[side];
+  return roster.find(player=>player.id===order[s.battingIndex[side]%order.length]);
 };
 function addRun(s, runner, rbiBatter = null) {
   const side = battingSide(s);
@@ -91,8 +127,14 @@ function finishPA(s, game, { hit = null, ab = false, walk = false, strikeout = f
     if (hit === 'TRIPLE') st.triples++;
     if (hit === 'HOME_RUN') st.HR++;
   }
+  const pitcherId=s.defenseLineup[fieldingSide(s)]['1'];
+  if(pitcherId){
+    const pitching=s.pitchingStats[fieldingSide(s)][pitcherId];
+    pitching.BF++; if(hit)pitching.H++; if(walk)pitching.BB++;
+    if(strikeout)pitching.SO++; if(hbp)pitching.HBP++;
+  }
   s.battingIndex[side]++;
-  s.balls = 0; s.strikes = 0;
+  s.balls=0;s.strikes=0;
 }
 function endHalfIfNeeded(s) {
   if (s.outs !== 3) return false;
@@ -137,8 +179,15 @@ function process(s, game, event) {
   assert(event && EVENT_TYPES.has(event.type), 'Unknown scoring action.');
   const prev = { inning: s.inning, half: s.half };
   const batter = batterOf(s, game);
-  const team = battingSide(s), defense = fieldingSide(s);
-  let label = '';
+  const team=battingSide(s),defense=fieldingSide(s);
+  const pitchId=s.defenseLineup[defense]['1'];
+  const pitchStats=pitchId?s.pitchingStats[defense][pitchId]:null;
+  if(['BALL','STRIKE','FOUL'].includes(event.type)&&pitchStats){
+    pitchStats.P++;
+    if(event.type==='BALL')pitchStats.Balls++;
+    else pitchStats.Strikes++;
+  }
+  let label='';
   switch (event.type) {
     case 'DEFENSIVE_LINEUP': {
       assert(event.side === 'home' || event.side === 'away', 'Choose the home or away team.');
@@ -146,6 +195,58 @@ function process(s, game, event) {
         event.assignments, game.teams[event.side].roster
       );
       label = 'Defensive lineup updated';
+      break;
+    }
+    case 'LINEUP_SUBSTITUTION': {
+      const side=event.side,slot=event.slot,playerId=event.playerId;
+      assert(side==='home'||side==='away','Choose a valid team to substitute.');
+      const order=s.battingOrder[side];
+      assert(Number.isInteger(slot)&&slot>=0&&slot<order.length,'Choose a valid batting slot.');
+      assert(typeof playerId==='string'&&game.teams[side].roster.some(p=>p.id===playerId),
+        'Substitute must be on this team’s roster.');
+      assert(!order.includes(playerId),'This player already has a batting slot.');
+      assert(!s.lineupRemoved[side].includes(playerId)||s.rules.allowReentry,
+        'Your rules do not allow this player to re-enter the batting order.');
+      assert(!Object.values(s.bases).some(p=>p?.id===playerId),
+        'A baserunner cannot simultaneously enter a different batting slot.');
+      const outgoing=order[slot];
+      order[slot]=playerId;
+      if(!s.lineupRemoved[side].includes(outgoing))s.lineupRemoved[side].push(outgoing);
+      s.substitutions.push({type:'LINEUP_SUBSTITUTION',side,slot,outgoing,incoming:playerId,
+        kind:event.kind==='PH'?'PH':'SUB',eventIndex:s.eventCount});
+      label=`${game.teams[side].roster.find(p=>p.id===playerId).name} replaces ${game.teams[side].roster.find(p=>p.id===outgoing).name} in batting slot ${slot+1}`;
+      break;
+    }
+    case 'PINCH_RUNNER': {
+      const from=Number(event.from),playerId=event.playerId,side=battingSide(s);
+      assert([1,2,3].includes(from)&&s.bases[from],'Choose an occupied base for the pinch runner.');
+      assert(typeof playerId==='string'&&game.teams[side].roster.some(p=>p.id===playerId),
+        'Pinch runner must be on the batting team’s roster.');
+      assert(!Object.values(s.bases).some(p=>p?.id===playerId),
+        'Pinch runner is already on base.');
+      assert(!s.battingOrder[side].includes(playerId),
+        'A current batter cannot be used as a pinch runner.');
+      assert(!s.lineupRemoved[side].includes(playerId)||s.rules.allowReentry,
+        'Your rules do not allow this player to re-enter.');
+      const outgoing=s.bases[from],slot=s.battingOrder[side].indexOf(outgoing.id);
+      assert(slot>=0,'The runner’s batting slot is not available for substitution.');
+      s.bases[from]=game.teams[side].roster.find(p=>p.id===playerId);
+      s.battingOrder[side][slot]=playerId;
+      if(!s.lineupRemoved[side].includes(outgoing.id))s.lineupRemoved[side].push(outgoing.id);
+      s.substitutions.push({type:'PINCH_RUNNER',side,slot,from,outgoing:outgoing.id,incoming:playerId,eventIndex:s.eventCount});
+      label=`${s.bases[from].name} pinch-runs for ${outgoing.name} on ${from===1?'first':from===2?'second':'third'}`;
+      break;
+    }
+    case 'PITCHER_CHANGE': {
+      const side=event.side,playerId=event.playerId;
+      assert(side==='home'||side==='away','Choose a valid team for a pitching change.');
+      assert(typeof playerId==='string'&&game.teams[side].roster.some(p=>p.id===playerId),
+        'New pitcher must be on the defensive roster.');
+      const updated={...s.defenseLineup[side]};
+      for(const position of Object.keys(updated))if(updated[position]===playerId)updated[position]=null;
+      updated['1']=playerId;
+      s.defenseLineup[side]=validateDefensiveLineup(updated,game.teams[side].roster);
+      label=`${game.teams[side].roster.find(p=>p.id===playerId).name} enters as pitcher`;
       break;
     }
     case 'BALL':
@@ -278,9 +379,12 @@ export function replayGame(game) {
   // Incomplete/invalid external data must not be trusted simply because it parses as JSON.
   const validated = {
     events: game.events, // annotation lookups use the already validated, ordered journal
+    rules:game.rules,
     teams: {
-      home: { name: sanitize(game.teams.home?.name, 60), roster: validateRoster(game.teams.home?.roster, 'home') },
-      away: { name: sanitize(game.teams.away?.name, 60), roster: validateRoster(game.teams.away?.roster, 'away') },
+      home: {name:sanitize(game.teams.home?.name,60),roster:validateRoster(game.teams.home?.roster,'home'),
+        battingOrder:game.teams.home?.battingOrder},
+      away: {name:sanitize(game.teams.away?.name,60),roster:validateRoster(game.teams.away?.roster,'away'),
+        battingOrder:game.teams.away?.battingOrder},
     },
   };
   assert(game.events.length <= 10000, 'Game has too many events.');
