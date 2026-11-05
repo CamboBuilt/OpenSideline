@@ -23,6 +23,17 @@ export function assertCloudConfig(config=CLOUD_CONFIG){
     throw new Error('Cloud URL must use HTTPS outside local development.');
   if(config.publishableKey.startsWith('sb_secret_') || /service_role/i.test(config.publishableKey))
     throw new Error('Never include a Supabase service-role or secret key in browser configuration.');
+  // Legacy Supabase keys are JWTs. Catch accidentally pasted service-role
+  // JWTs as well as newer sb_secret_* keys before the client is initialized.
+  if(config.publishableKey.split('.').length===3){
+    let role=null;
+    try{
+      const part=config.publishableKey.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+      role=JSON.parse(atob(part)).role;
+    }catch{throw new Error('Invalid legacy Supabase key. Use a publishable or anon key.');}
+    if(role!=='anon')
+      throw new Error('Only legacy anon/public keys may be used in browser configuration.');
+  }
   return {...config,url:target.origin};
 }
 async function loadSupabaseBrowser(){
