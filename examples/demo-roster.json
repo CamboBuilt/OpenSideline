@@ -1,0 +1,23 @@
+{
+  "teamName": "Fictional Demo Tigers",
+  "roster": [
+    {
+      "number": "12",
+      "name": "Alex Rivera",
+      "position": "SS",
+      "battingOrder": 1
+    },
+    {
+      "number": "7",
+      "name": "Jordan Brooks",
+      "position": "CF",
+      "battingOrder": 2
+    },
+    {
+      "number": "24",
+      "name": "Taylor Lane",
+      "position": "P",
+      "battingOrder": 3
+    }
+  ]
+}
