@@ -410,3 +410,35 @@ button:disabled { opacity:.45; }
   .topbar-actions .live-tag{display:none}
   .stat-action-title{flex-wrap:wrap}
 }
+
+
+/* v0.3 — private cloud account panel (optional, with local-first fallback) */
+.cloud-modal{width:min(740px,100%)}
+.cloud-modal .modal-head{margin-bottom:17px}
+.cloud-modal .modal-head p{max-width:560px}
+.cloud-modal h3{font-size:15px;color:#19543f;margin-bottom:5px}
+.cloud-modal p{font-size:12px;line-height:1.55;color:#5a7a6a;margin:7px 0}
+.cloud-not-connected{border:1px solid #b9dccb;background:#f2faf5;padding:16px;border-radius:12px}
+.cloud-not-connected b{color:#28654c}
+.cloud-inline-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:13px 0}
+.cloud-inline-form input,.cloud-section select{background:white;border:1px solid #afcfbf;color:#1d4d3c;padding:10px;border-radius:9px;min-height:42px;font-size:12px;flex:1;min-width:150px}
+.cloud-inline-form .btn,.cloud-section .btn{min-height:42px;font-size:12px;white-space:nowrap}
+.cloud-signed-in{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:#e7f6ed;padding:11px 14px;border-radius:11px;color:#185941;font-size:12px}
+.cloud-signed-in strong{overflow-wrap:anywhere}
+.cloud-section{border-top:1px solid #d5e8dc;padding:15px 0}
+.cloud-section label{font-size:11px;color:#427361;font-weight:700;display:block;margin-bottom:6px}
+.cloud-section select{width:100%;display:block;max-width:100%;margin:6px 0 10px}
+.cloud-section>p{margin-bottom:12px}
+.cloud-status{background:#ebf7f0;color:#126144!important;border:1px solid #b9d9c7;border-radius:9px;padding:10px 12px;margin-top:15px!important;overflow-wrap:anywhere}
+.cloud-games-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px}
+.cloud-game-row{display:flex;justify-content:space-between;align-items:center;gap:11px;padding:10px 8px;border-bottom:1px solid #e1ece5}
+.cloud-game-details{min-width:0}
+.cloud-game-details strong{color:#275943;font-size:13px;display:block;overflow-wrap:anywhere}
+.cloud-game-details small{color:#719382;font-size:10px;display:block;margin-top:5px}
+.cloud-game-row .btn{flex:0 0 auto}
+@media(max-width:600px){
+  .cloud-modal{width:100%;max-height:92dvh;overflow:auto;border-radius:17px 17px 0 0;padding:18px 14px}
+  .cloud-inline-form{flex-direction:column;align-items:stretch}
+  .cloud-inline-form input,.cloud-inline-form .btn{width:100%}
+  .cloud-game-row{padding:10px 2px}
+}
