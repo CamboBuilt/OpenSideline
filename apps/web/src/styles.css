@@ -355,3 +355,58 @@ button:disabled { opacity:.45; }
   .card-top-tools{gap:5px}
   .card-top-tools .pill{display:none}
 }
+
+
+/* v0.2.5 game-day batting, pinch runners, fielding credits and season totals */
+.rules-setup{display:grid;grid-template-columns:1.3fr 1.4fr .75fr 1fr;align-items:end;gap:12px;padding:15px;margin-top:18px;background:#f2faf6;border:1px solid #c4dfd0;border-radius:12px}
+.rules-setup label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:#2f6952;font-weight:800}
+.rules-setup select,.rules-setup input[type=number]{min-width:0;width:100%;min-height:40px;padding:8px;border:1px solid #bbd6cb;border-radius:8px;background:white;color:#224d40;font-size:12px}
+.rules-setup .reentry-choice{flex-direction:row;align-items:center;min-height:40px;gap:8px}
+.rules-setup .reentry-choice input{width:18px;height:18px;accent-color:#087d62}
+.setup-team input[id$="-order"]{width:100%;min-height:40px;padding:8px 11px;background:#f6faf8;color:#183b34;border:1px solid #b4d5c5;border-radius:8px}
+.lineup-modal{width:min(970px,100%)}
+.lineup-entries{margin-top:20px}
+.lineup-entries h3,.game-day-form h3{font-size:17px;color:#1a674e}
+.lineup-entries>p,.game-day-form p{font-size:11px;color:#648374;margin:6px 0 12px}
+.lineup-row{display:grid;grid-template-columns:34px minmax(116px,1.4fr) minmax(135px,1.4fr) minmax(89px,.75fr) 76px;gap:8px;align-items:center;border-bottom:1px solid #d7e8df;padding:8px 0}
+.lineup-slot{display:flex;align-items:center;justify-content:center;background:#d9f0e3;color:#0a7859;border-radius:8px;width:32px;height:34px;font-weight:900}
+.lineup-player{min-width:0;color:#234e3f;font-size:12px}
+.lineup-player strong,.lineup-player small{display:block;overflow-wrap:anywhere}
+.lineup-player small{font-size:10px;color:#739184;margin-top:4px}
+.lineup-row select,.game-day-form select{width:100%;min-height:40px;border-radius:9px;border:1px solid #bad8c8;background:white;color:#244f3d;padding:6px;font-size:11px;min-width:0}
+.lineup-row .btn{min-height:40px;padding:7px;font-size:11px}
+.lineup-extras{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.game-day-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;align-items:end;border:1px solid #c6dfd3;background:#f4faf6;border-radius:12px;padding:13px;min-width:0}
+.game-day-form h3,.game-day-form p{grid-column:1/-1}
+.game-day-form .btn{padding:8px 11px;min-height:40px;font-size:11px}
+.game-day-form select[name=base]{grid-column:1/-1}
+.fielder-touch{flex-wrap:wrap}
+.fielder-credit-choice{display:flex;gap:9px;flex-wrap:wrap;flex-basis:100%;padding:4px 0 7px 33px}
+.fielder-credit-choice label{display:flex;gap:5px;align-items:center;font-size:11px;color:#2e7059;cursor:pointer}
+.fielder-credit-choice input{accent-color:#087d62;min-width:15px;min-height:15px}
+.stat-roster-tag{display:inline-block;margin-left:5px;color:#6c9180;font-weight:500;font-size:9px}
+.stat-secondary-title{margin-top:19px}
+.stat-action-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stat-action-title h4{margin-bottom:0}
+.spray-zones{display:flex;gap:6px;flex-wrap:wrap;padding:1px 16px 15px}
+.spray-zone{font-size:10px;font-weight:700;background:#eff7f1;border:1px solid #cbdfd2;border-radius:8px;padding:9px 10px;color:#3f6654}
+.spray-zone b{margin-left:5px;color:#0b775a;font-size:12px}
+@media(max-width:760px){
+  .rules-setup{grid-template-columns:1fr 1fr;gap:10px}
+  .lineup-row{grid-template-columns:28px minmax(100px,1fr) minmax(120px,1fr);gap:6px}
+  .lineup-slot{width:26px;height:32px}
+  .lineup-row select[name=kind]{grid-column:2}
+  .lineup-row .btn{grid-column:3}
+  .lineup-extras{grid-template-columns:1fr}
+}
+@media(max-width:500px){
+  .rules-setup{grid-template-columns:1fr}
+  .lineup-modal{width:100%;max-height:95dvh}
+  .lineup-row{grid-template-columns:30px minmax(0,1fr) minmax(0,1.2fr)}
+  .lineup-row .lineup-player{font-size:11px}
+  .lineup-row select{font-size:10px;padding:5px}
+  .lineup-modal .modal-head h2{font-size:20px}
+  .lineup-entries{margin-top:13px}
+  .topbar-actions .live-tag{display:none}
+  .stat-action-title{flex-wrap:wrap}
+}

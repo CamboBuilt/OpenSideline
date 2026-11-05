@@ -43,3 +43,15 @@
 - [ ] Hosted service with transparent streaming costs and self-hosting option
 
 **Not dates or promises:** this roadmap is an invitation for community contribution, not a release schedule.
+
+## Game-day release candidate and connected-app milestones
+
+- **v0.2.5 (implemented in [PR #9](https://github.com/CamboBuilt/OpenSideline/pull/9))**: separate active batting order, substitutions/pinch runners, basic pitching changes and stats, explicit fielding credits, local season archive/CSV and marked zone counts. Needs field use and scoring rule review before merge.
+- **v0.3 ([#10](https://github.com/CamboBuilt/OpenSideline/issues/10))**: private accounts, team/season database, permissioned remote game sync. This requires identity, persistence, server-side event validation and a configured deployment backend.
+- **v0.4 ([#11](https://github.com/CamboBuilt/OpenSideline/issues/11))**: revocable QR lineup invitations and coach acceptance. QR codes must never expose raw private youth rosters.
+- **v0.5 ([#12](https://github.com/CamboBuilt/OpenSideline/issues/12))**: internet spectator feeds, OBS and external scoreboard events; the existing same-browser demo is not a remote stream.
+- **v0.6 ([#14](https://github.com/CamboBuilt/OpenSideline/issues/14))**: player profiles, exact spray coordinates, season leaders and reports beyond the current rough zone counts.
+- **Scoring accuracy ([#13](https://github.com/CamboBuilt/OpenSideline/issues/13))**: league-specific substitution rules, third-out judgments, pitcher-of-record and advanced pitching statistics.
+- **Installable/offline app ([#15](https://github.com/CamboBuilt/OpenSideline/issues/15))**: PWA/mobile foundation with safe caching, backups and sync queues.
+
+**Current privacy and reliability boundary:** Browser localStorage only. Don't use this prototype as your only source of authoritative team or game records. Export before replacing a game or clearing browser storage; do not publicly share youth rosters in GitHub issues.
