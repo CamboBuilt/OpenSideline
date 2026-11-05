@@ -1,4 +1,4 @@
-import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPlayAdvances, formatAvg, formatObp, formatSlg, FIELDING_POSITIONS, HIT_LOCATIONS } from '../../../packages/scoring-engine/src/index.mjs';
+import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPlayAdvances, formatAvg, formatObp, formatSlg, FIELDING_POSITIONS, HIT_LOCATIONS, LEAGUE_PRESETS } from '../../../packages/scoring-engine/src/index.mjs';
 
 import { getQuickPlayPresets } from './quick-play.mjs';
 import { parseRosterImport, importedRosterText, matchImportedDefense } from './roster-import.mjs';
@@ -15,6 +15,8 @@ let showSetup = false;
 let showPlay = null;
 let fieldingDraft = null;
 let defenseDraft = null;
+let showLineup = false;
+let lineupSide='away';
 let importedSetupPlayers = {away:null,home:null};
 let feedback = '';
 let showMoreActions = false;
@@ -184,6 +186,21 @@ function parseRoster(raw, prefix) {
   });
 }
 function rosterToText(side) { return game.teams[side].roster.map(p => `#${p.number} ${p.name}`).join('\n'); }
+function lineupNumbers(side) {
+  const roster=game.teams[side].roster,ids=game.teams[side].battingOrder??roster.map(p=>p.id);
+  return ids.map(id=>roster.find(p=>p.id===id)?.number??'').filter(Boolean).join(', ');
+}
+function selectedBatters(roster,numbers,mode) {
+  if(mode==='continuous')return roster.map(p=>p.id);
+  const entries=String(numbers??'').split(/[,\\n; ]+/).map(s=>s.trim()).filter(Boolean);
+  if(mode==='nine' && entries.length===0)return roster.slice(0,9).map(p=>p.id);
+  const chosen=entries.length?entries:roster.map(p=>p.number);
+  return chosen.map(number=>{
+    const matches=roster.filter(p=>String(p.number)===number);
+    if(matches.length!==1)throw new Error('Batting jersey #'+number+' must match exactly one roster member.');
+    return matches[0].id;
+  });
+}
 function setupModal() {
   const teamEditor = (side, label) => `<div class="setup-team">
     <label for="${side}-name">${label}</label>
@@ -194,16 +211,29 @@ function setupModal() {
       </label>
       <span class="import-status" id="import-status-${side}" role="status"></span>
     </div>
-    <label for="${side}-roster">${label} batting order / roster</label>
+    <label for="${side}-roster">${label} full roster (batters and bench)</label>
     <textarea id="${side}-roster" name="${side}Roster" rows="10" required>${safe(rosterToText(side))}</textarea>
-    <p class="import-hint">Enter one player per line, in batting order. Imported defensive positions will also be saved.</p>
+    <p class="import-hint">One player per line. Imported defensive positions will be saved.</p>
+    <label for="${side}-order">Active batting order · jersey numbers in order</label>
+    <input id="${side}-order" name="${side}Order" value="${safe(lineupNumbers(side))}" placeholder="12, 7, 24, 18" />
+    <p class="import-hint">In continuous batting, everyone in the roster bats. For nine/custom, edit this list to choose only active batters; others stay on the bench.</p>
   </div>`;
   return `<div class="modal-backdrop" data-command="close-setup"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-title">
     <div class="modal-head"><div><div class="eyebrow">TEAMS + BATTING ORDER</div><h2 id="setup-title">Set up a game</h2>
       <p>Paste rosters or import a standard CSV/JSON file. Optional P, C, 1B, 2B, 3B, SS, LF, CF and RF values set the starting defense.</p>
       <button class="btn subtle template-button" data-command="download-roster-template" type="button">Download sample CSV</button>
     </div><button data-command="close-setup" class="close-button" aria-label="Close setup">×</button></div>
-    <form id="setup-form"><div class="setup-columns">${teamEditor('away','Away team')}${teamEditor('home','Home team')}</div>
+    <form id="setup-form"><div class="rules-setup">
+      <label>Rules example<select name="preset" id="game-preset">
+        ${Object.entries(LEAGUE_PRESETS).map(([key,p])=>`<option value="${key}" ${(game.rules?.preset??'travel')===key?'selected':''}>${safe(p.label)}</option>`).join('')}
+      </select></label>
+      <label>Batting format<select name="battingMode" id="batting-mode">
+        ${[['continuous','Continuous (everyone bats)'],['nine','Nine active batters'],['custom','Custom active lineup']].map(([key,label])=>`<option value="${key}" ${(game.rules?.battingMode??'continuous')===key?'selected':''}>${label}</option>`).join('')}
+      </select></label>
+      <label>Scheduled innings<input type="number" name="innings" id="game-innings" min="1" max="15" value="${game.rules?.innings??7}"/></label>
+      <label class="reentry-choice"><input type="checkbox" name="allowReentry" id="game-reentry" ${(game.rules?.allowReentry??true)?'checked':''}/> Allow batting reentry</label>
+    </div>
+    <div class="setup-columns">${teamEditor('away','Away team')}${teamEditor('home','Home team')}</div>
     <p class="warning-text">Starting a new game clears all current plays and defensive lineup changes. Export the current game first if you want a copy.</p>
     <div class="modal-footer"><button type="button" class="btn subtle" data-command="close-setup">Cancel</button>
       <button class="btn primary" type="submit">Start new game ${icon('arrow',16)}</button></div></form>
@@ -359,6 +389,49 @@ function defenseModal(v){
     </form>
   </div></div>`;
 }
+function lineupModal(v) {
+  const side=lineupSide,roster=game.teams[side].roster,order=v.battingOrder[side];
+  const bench=roster.filter(p=>!order.includes(p.id));
+  const options=(players)=>players.map(p=>`<option value="${safe(p.id)}">${safe('#'+(p.number||'—')+' '+p.name)}</option>`).join('');
+  const lineupRows=order.map((id,i)=>{
+    const p=roster.find(x=>x.id===id);
+    return `<form class="lineup-row" data-substitution-slot="${i}">
+      <span class="lineup-slot">${i+1}</span>
+      <div class="lineup-player"><strong>${safe(p?.name??'Unknown')}</strong><small>Jersey #${safe(p?.number??'—')}${v.batting===side&&v.battingIndex[side]%order.length===i?' · At bat':''}</small></div>
+      <select aria-label="Substitute for slot ${i+1}" name="playerId" required>
+        <option value="">Choose bench player</option>${options(bench)}
+      </select>
+      <select aria-label="Substitution type" name="kind"><option value="SUB">Sub</option><option value="PH">Pinch hitter</option></select>
+      <button class="btn primary" type="submit" ${bench.length?'':'disabled'}>Swap</button>
+    </form>`;
+  }).join('');
+  const liveRunners=[1,2,3].filter(base=>v.bases[base]);
+  const pitching=game.teams[side].roster.find(p=>p.id===v.defenseLineup[side]['1']);
+  return `<div class="modal-backdrop" data-command="close-lineup"><div class="modal lineup-modal" role="dialog" aria-modal="true" aria-labelledby="lineup-title">
+    <div class="modal-head"><div><div class="eyebrow">GAME-DAY CHANGES</div><h2 id="lineup-title">Lineup & substitutions</h2>
+      <p>Roster: ${roster.length} · Active batting slots: ${order.length} · ${safe(v.rules.battingMode)} batting · ${v.rules.innings} scheduled innings.</p></div>
+      <button class="close-button" type="button" data-command="close-lineup" aria-label="Close lineup">×</button></div>
+    <div class="defense-team-switch">${['away','home'].map(value=>`<button type="button" data-lineup-team="${value}" class="${side===value?'selected':''}" aria-pressed="${side===value}">${value==='away'?'Away':'Home'} · ${safe(game.teams[value].name)}</button>`).join('')}</div>
+    <div class="lineup-entries"><h3>Batting order</h3><p>Replace an active batter with a bench player. Current game stats stay with the correct player.</p>${lineupRows}</div>
+    <div class="lineup-extras">
+      <form id="pitcher-change-form" class="game-day-form"><h3>Pitching change</h3><p>Current pitcher: ${safe(pitching?.name??'Not set')}</p>
+        <select name="playerId" aria-label="New pitcher" required><option value="">Choose pitcher</option>${options(roster)}</select>
+        <button class="btn primary" type="submit">Change pitcher</button></form>
+      <form id="pinch-runner-form" class="game-day-form"><h3>Pinch runner</h3>
+        <p>${v.batting===side?'Replace a runner on base; the substitute takes over their batting slot.':'Select the team currently batting to replace a runner.'}</p>
+        <select name="base" aria-label="Runner to replace" required ${v.batting!==side?'disabled':''}>
+          <option value="">Choose base</option>${liveRunners.map(base=>`<option value="${base}">${['','First','Second','Third'][base]} · ${safe(v.bases[base].name)}</option>`).join('')}
+        </select>
+        <select name="playerId" aria-label="New pinch runner" required ${v.batting!==side?'disabled':''}>
+          <option value="">Choose bench runner</option>${options(bench.filter(p=>!Object.values(v.bases).some(r=>r?.id===p.id)))}
+        </select>
+        <button class="btn primary" type="submit" ${v.batting===side&&liveRunners.length&&bench.length?'':'disabled'}>Make substitution</button>
+      </form>
+    </div>
+    <p class="fineprint">Example league rules need verification against your association. No official substitution, reentry or courtesy-runner rulings are automated.</p>
+    <p class="play-form-error" data-lineup-error role="alert" hidden></p>
+  </div></div>`;
+}
 function downloadRosterTemplate() {
   const csv=['number,name,position,batting_order','12,Alex Rivera,SS,1','7,Jordan Brooks,CF,2','24,Taylor Lane,P,3'].join('\n')+'\n';
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
@@ -371,7 +444,7 @@ function downloadRosterTemplate() {
 function render() {
   const v = replayGame(game);
   document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
-  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (showLineup && displayMode === 'scorer' ? lineupModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
 }
 function perform(event) {
   try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
