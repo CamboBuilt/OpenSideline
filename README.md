@@ -8,7 +8,7 @@ OpenSideline is an early-stage, community-built open-source sports platform. Thi
 
 ## Get it running
 
-**No-install preview:** Open `OpenSideline-Demo.html` in a modern desktop browser. It bundles the same app into one file. Some browsers restrict saving from local files; use `npm start` for reliable browser storage and multiple-tab syncing.
+**No-install preview:** `OpenSideline-Demo.html` remains a **v0.1 snapshot**. To use the new v0.2 runner-decision interface, start the application with `npm start`. Some browsers restrict saving from local files; use `npm start` for reliable browser storage and multiple-tab syncing.
 
 **Requirements:** Node.js 20 or newer. No `npm install` needed.
 
