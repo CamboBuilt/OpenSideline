@@ -36,6 +36,8 @@ Issue #1 introduces a play decision form for every occupied base, explicit RBI d
 - Cloud requires a Supabase project, the applied SQL migration and **public-only** frontend settings; without those, the Cloud panel clearly says it is unconfigured.
 - [Cloud setup & live security-test checklist](docs/CLOUD-SETUP.md). Follow before entering any real youth-team information.
 - **Not included yet:** team invitations, automatic sync, live internet spectators, protected QR lineup sharing, and verified real-database integration tests.
+- **Offline app shell:** Installable PWA manifest, original icon, and service-worker caching for first-party static assets. No cloud sessions or player data are cached by the service worker. See [Offline installation guide](docs/OFFLINE-APP.md).
+
 
 ## v0.2.5: Active lineups, substitutions, fielding stats and local season totals
 
