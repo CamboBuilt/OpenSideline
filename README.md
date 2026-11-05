@@ -28,6 +28,10 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.2.2: Groundouts, lineouts and flyouts (preview)
+
+The main scoring screen now has separate **Ground out**, **Line out** and **Fly out** buttons. These record distinct play descriptions, award a batter a plate appearance and at-bat, and record an out without a hit. When runners are aboard, you can hold/advance/retire runners in the same quick sheet; common groundout RBI advancement from third is offered as a scorer-reviewed shortcut. **Sacrifice fly remains a separate action** in More plays because its at-bat/statistical treatment differs. The generic **Other out** remains available for unusual plays. Fielding positions, putouts and assists are not yet modeled.
+
 ## v0.2.1: Faster, brighter scoring (preview)
 
 - A high-contrast, field-light scorer with a compact **sticky** score/count/runner bar.
