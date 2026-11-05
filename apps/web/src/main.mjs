@@ -148,10 +148,10 @@ function renderScorer(v) {
       <div class="sticky-hud">${scoreHeader(v,true)}<div class="hud-bottom"><span>AT BAT <strong>${safe(v.batter.name)}</strong></span><span class="hud-count">COUNT ${v.balls}–${v.strikes} · ${v.outs} OUT</span><span class="hud-runners">ON BASE ${[1,2,3].map(b => `<b class="${v.bases[b] ? 'active' : ''}" aria-label="${['','First','Second','Third'][b]} base ${v.bases[b] ? 'occupied' : 'empty'}">${b}</b>`).join('')}</span></div></div>
       <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><span class="pill">${safe(game.teams[v.batting].name)}</span></div>
         <div class="at-bat-strip">
-          <div class="batter-block"><div class="batter-avatar">\${safe(batter.number || '—')}</div><div><div class="batter-title">\${safe(batter.name)}</div><div class="batter-sub">\${safe(game.teams[v.batting].name)} · Batting #\${(v.battingIndex[v.batting] % game.teams[v.batting].roster.length) + 1}</div></div></div>
-          <div class="mini-field" aria-label="Current baserunners">\${renderBases(v)}<div class="runner-summary">\${[1,2,3].filter(base => v.bases[base]).map(base => \`<span>\${['','1B','2B','3B'][base]}: \${safe(v.bases[base].name)}</span>\`).join('') || '<span>Bases empty</span>'}</div></div>
+          <div class="batter-block"><div class="batter-avatar">${safe(batter.number || '—')}</div><div><div class="batter-title">${safe(batter.name)}</div><div class="batter-sub">${safe(game.teams[v.batting].name)} · Batting #${(v.battingIndex[v.batting] % game.teams[v.batting].roster.length) + 1}</div></div></div>
+          <div class="mini-field" aria-label="Current baserunners">${renderBases(v)}<div class="runner-summary">${[1,2,3].filter(base => v.bases[base]).map(base => `<span>${['','1B','2B','3B'][base]}: ${safe(v.bases[base].name)}</span>`).join('') || '<span>Bases empty</span>'}</div></div>
         </div>
-        <div class="control-wrap">\${playActions(v)}</div>
+        <div class="control-wrap">${playActions(v)}</div>
       </section>
       <section class="card timeline-card"><div class="timeline-header"><div><div class="section-label">GAME DETAILS</div><h3>Follow the action</h3></div><span class="number-badge">${game.events.length}</span></div>
         <div class="tabs"><button class="${selectedTab === 'plays' ? 'active' : ''}" data-tab="plays">Play-by-play</button><button class="${selectedTab === 'stats' ? 'active' : ''}" data-tab="stats">Box score</button></div>
