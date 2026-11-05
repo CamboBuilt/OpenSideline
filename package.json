@@ -1,6 +1,6 @@
 {
   "name": "opensideline",
-  "version": "0.2.3-beta.1",
+  "version": "0.2.4-beta.1",
   "private": true,
   "type": "module",
   "description": "An open-source, community-built sports platform — baseball scoring MVP",
@@ -8,7 +8,7 @@
     "start": "node scripts/server.mjs",
     "dev": "node scripts/server.mjs",
     "test": "node --test packages/scoring-engine/test/*.test.mjs apps/web/test/*.test.mjs",
-    "check": "npm test && node --check apps/web/src/main.mjs && node --check apps/web/src/quick-play.mjs && node --check packages/scoring-engine/src/index.mjs && node --check packages/scoring-engine/src/fielding.mjs"
+    "check": "npm test && node --check apps/web/src/main.mjs && node --check apps/web/src/quick-play.mjs && node --check apps/web/src/roster-import.mjs && node --check packages/scoring-engine/src/index.mjs && node --check packages/scoring-engine/src/fielding.mjs && node --check packages/scoring-engine/src/defensive-lineup.mjs"
   },
   "engines": {
     "node": ">=20"
