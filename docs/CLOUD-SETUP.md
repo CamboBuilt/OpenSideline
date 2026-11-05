@@ -68,3 +68,7 @@ Supabase PostgreSQL: teams / team_members / games
 Every saved game carries its local `game-...` identifier and a cloud revision. First save expects no remote revision; subsequent saves send the last confirmed revision. If another client writes meanwhile, the server refuses the stale save.
 
 See [Supabase RLS guidance](https://supabase.com/docs/guides/database/postgres/row-level-security), [secure frontend data API](https://supabase.com/docs/guides/database/secure-data), and [JavaScript email OTP API](https://supabase.com/docs/reference/javascript/auth-signinwithotp).
+
+## Offline web app
+
+The same preview also includes an installable web-app manifest and a first-party, static-only service worker. See [Offline installation guide](OFFLINE-APP.md). The service worker never caches Supabase API responses, session tokens or personal player records; game data still lives in the browser's local storage.
