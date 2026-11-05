@@ -28,6 +28,16 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.2.5: Active lineups, substitutions, fielding stats and local season totals
+
+- Batting order is separate from the roster: continuous / nine / custom formats, bench players don't bat automatically.
+- In-game pinch hitters, pinch runners and pitching changes; optional example rule presets, scheduled innings and reentry setting.
+- Explicit PO/A/E/DP fielding decisions and basic pitcher stats in the box score.
+- Local browser season archive and CSV rollups, plus rough ball-location counts.
+- See [Game-day guide](docs/GAME-DAY.md) for detailed behavior, supported formats and important scoring limitations.
+
+**Accounts, secure QR lineup sharing, internet live updates, exact spray charts and official-scoring guarantees are not yet implemented.**
+
 ## v0.2.4: Defensive lineup + roster imports (preview)
 
 - **Defense** opens a 9-position field layout for either team. Choose the actual defender at each position and save whenever players switch positions. This is recorded in the game journal, not inferred from batting order.
