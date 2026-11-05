@@ -64,6 +64,15 @@ test('unconfigured cloud never requires a remote SDK',()=>{
   assert.throws(()=>assertCloudConfig({url:'https://example.supabase.co',publishableKey:'sb_secret_bad'}),/Never include/);
   assert.equal(assertCloudConfig({url:'https://project.supabase.co/',publishableKey:'sb_publishable_test'}).url,
     'https://project.supabase.co');
+  const legacyToken=role=>['eyJhbGciOiJIUzI1NiJ9',
+    Buffer.from(JSON.stringify({role})).toString('base64url'),'signature'].join('.');
+  assert.throws(()=>assertCloudConfig({
+    url:'https://project.supabase.co',publishableKey:legacyToken('service_role'),
+  }),/anon\/public/i);
+  assert.doesNotThrow(()=>assertCloudConfig({
+    url:'https://project.supabase.co',publishableKey:legacyToken('anon'),
+  }));
+
 });
 test('cloud game saves require valid event replay and authenticated user',async()=>{
   const fx=fakeClient(),gateway=createCloudGateway(fx.client);
