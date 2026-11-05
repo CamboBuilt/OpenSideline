@@ -98,7 +98,7 @@ test('lineup rejects duplicate players, unknown players, wrong team, invalid pos
   assert.throws(()=>lineup(g,'home',{'6':'a6'}),/roster/i);
   assert.throws(()=>lineup(g,'home',{'6':'stranger'}),/roster/i);
   assert.throws(()=>lineup(g,'home',{'10':'h6'}),/position/i);
-  assert.throws(()=>lineup(g,'home',{'__proto__':'h6'}),/position/i);
+  assert.throws(()=>lineup(g,'home',{['__proto__']:'h6'}),/position/i);
   assert.throws(()=>lineup(g,'home',null),/object/i);
   assert.throws(()=>lineup(g,'other',{'6':'h6'}),/home or away/i);
 });
