@@ -1,6 +1,7 @@
 import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPlayAdvances, formatAvg, formatObp, formatSlg, FIELDING_POSITIONS, HIT_LOCATIONS } from '../../../packages/scoring-engine/src/index.mjs';
 
 import { getQuickPlayPresets } from './quick-play.mjs';
+import { parseRosterImport, importedRosterText, matchImportedDefense } from './roster-import.mjs';
 
 const STORAGE_KEY = 'opensideline:baseball:v1';
 const app = document.querySelector('#app');
@@ -13,6 +14,8 @@ let selectedTab = 'plays';
 let showSetup = false;
 let showPlay = null;
 let fieldingDraft = null;
+let defenseDraft = null;
+let importedSetupPlayers = {away:null,home:null};
 let feedback = '';
 let showMoreActions = false;
 let noticeTimer = null;
@@ -182,10 +185,29 @@ function parseRoster(raw, prefix) {
 }
 function rosterToText(side) { return game.teams[side].roster.map(p => `#${p.number} ${p.name}`).join('\n'); }
 function setupModal() {
-  return `<div class="modal-backdrop" data-command="close-setup"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-title"><div class="modal-head"><div><div class="eyebrow">GAME SETTINGS</div><h2 id="setup-title">Set up a game</h2><p>Enter players in batting order. One player per line: <b>#12 Jordan Smith</b>.</p></div><button data-command="close-setup" class="close-button" aria-label="Close setup">×</button></div>
-    <form id="setup-form"><div class="setup-columns"><div><label for="away-name">Away team</label><input id="away-name" name="awayName" maxlength="60" value="${safe(game.teams.away.name)}" required/><label for="away-roster">Away roster</label><textarea id="away-roster" name="awayRoster" rows="10" required>${safe(rosterToText('away'))}</textarea></div>
-    <div><label for="home-name">Home team</label><input id="home-name" name="homeName" maxlength="60" value="${safe(game.teams.home.name)}" required/><label for="home-roster">Home roster</label><textarea id="home-roster" name="homeRoster" rows="10" required>${safe(rosterToText('home'))}</textarea></div></div>
-    <p class="warning-text">Saving setup starts a new game and clears the current plays. Export your game first if you want to keep a record.</p><div class="modal-footer"><button type="button" class="btn subtle" data-command="close-setup">Cancel</button><button class="btn primary" type="submit">Start new game ${icon('arrow',16)}</button></div></form></div></div>`;
+  const teamEditor = (side, label) => `<div class="setup-team">
+    <label for="${side}-name">${label}</label>
+    <input id="${side}-name" name="${side}Name" maxlength="60" value="${safe(game.teams[side].name)}" required/>
+    <div class="import-control-row">
+      <label class="import-file-label">Import CSV / JSON roster
+        <input type="file" data-roster-import="${side}" accept=".csv,.json,text/csv,application/json" aria-label="Import ${label.toLowerCase()} roster from CSV or JSON"/>
+      </label>
+      <span class="import-status" id="import-status-${side}" role="status"></span>
+    </div>
+    <label for="${side}-roster">${label} batting order / roster</label>
+    <textarea id="${side}-roster" name="${side}Roster" rows="10" required>${safe(rosterToText(side))}</textarea>
+    <p class="import-hint">Enter one player per line, in batting order. Imported defensive positions will also be saved.</p>
+  </div>`;
+  return `<div class="modal-backdrop" data-command="close-setup"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+    <div class="modal-head"><div><div class="eyebrow">TEAMS + BATTING ORDER</div><h2 id="setup-title">Set up a game</h2>
+      <p>Paste rosters or import a standard CSV/JSON file. Optional P, C, 1B, 2B, 3B, SS, LF, CF and RF values set the starting defense.</p>
+      <button class="btn subtle template-button" data-command="download-roster-template" type="button">Download sample CSV</button>
+    </div><button data-command="close-setup" class="close-button" aria-label="Close setup">×</button></div>
+    <form id="setup-form"><div class="setup-columns">${teamEditor('away','Away team')}${teamEditor('home','Home team')}</div>
+    <p class="warning-text">Starting a new game clears all current plays and defensive lineup changes. Export the current game first if you want a copy.</p>
+    <div class="modal-footer"><button type="button" class="btn subtle" data-command="close-setup">Cancel</button>
+      <button class="btn primary" type="submit">Start new game ${icon('arrow',16)}</button></div></form>
+  </div></div>`;
 }
 const destinations = ['HOLD', 'FIRST', 'SECOND', 'THIRD', 'HOME', 'OUT'];
 const numberedBases = {FIRST:1, SECOND:2, THIRD:3};
@@ -286,10 +308,69 @@ function fieldingModal(v) {
   </div></div>`;
 }
 
+const defenseOrder = [7,8,9,5,6,4,3,1,2];
+const defenseNames = {1:'P',2:'C',3:'1B',4:'2B',5:'3B',6:'SS',7:'LF',8:'CF',9:'RF'};
+function openDefenseEditor(side) {
+  const view=replayGame(game);
+  if (!['home','away'].includes(side)) side=view.fielding;
+  defenseDraft = {side, assignments:{...view.defenseLineup[side]}};
+  fieldingDraft = null;
+  showPlay = null;
+  showSetup = false;
+  render();
+}
+function defenseModal(v){
+  const side=defenseDraft.side, roster=game.teams[side].roster;
+  const slots=defenseOrder.map(position=>{
+    const key=String(position),selected=defenseDraft.assignments[key] ?? '';
+    return `<div class="defense-slot defense-slot-${position}">
+      <label for="defense-${position}"><strong>${position} · ${defenseNames[position]}</strong><small>${safe(FIELDING_POSITIONS[position])}</small></label>
+      <select id="defense-${position}" data-defense-position="${position}" aria-label="${safe(FIELDING_POSITIONS[position])} defender">
+        <option value="">Unassigned</option>
+        ${roster.map(player=>`<option value="${safe(player.id)}" ${selected===player.id?'selected':''}>${safe('#'+(player.number||'—')+' '+player.name)}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+  const assigned=Object.values(defenseDraft.assignments).filter(Boolean).length;
+  return `<div class="modal-backdrop" data-command="close-defense"><div class="modal defense-modal" role="dialog" aria-modal="true" aria-labelledby="defense-title">
+    <div class="modal-head"><div><div class="eyebrow">INNING DEFENSE</div><h2 id="defense-title">Defensive lineup</h2>
+      <p>Assign players once; we'll remember who occupied each position on every subsequent batted ball.</p></div>
+      <button class="close-button" data-command="close-defense" type="button" aria-label="Close defensive lineup">×</button>
+    </div>
+    <div class="defense-team-switch" role="group" aria-label="Choose defensive team">
+      ${['away','home'].map(value=>`<button type="button" class="${side===value?'selected':''}" data-defense-team="${value}" aria-pressed="${side===value}">${value==='away'?'Away':'Home'} · ${safe(game.teams[value].name)}</button>`).join('')}
+    </div>
+    <form id="defense-form">
+      <div class="defense-field" aria-label="Visual baseball defensive field">
+        <div class="defense-grass"></div>${slots}
+      </div>
+      <div class="defense-summary"><strong>${assigned} of 9 positions assigned</strong>
+        <button type="button" data-command="clear-defense">Clear defense</button></div>
+      <div class="defense-import">
+        <label class="import-file-label">Import a lineup for this team's existing roster (CSV or JSON)
+          <input type="file" data-import-defense accept=".csv,.json,text/csv,application/json" aria-label="Import defensive positions matching this roster"/>
+        </label><span id="defense-import-status" role="status"></span>
+      </div>
+      <p class="import-hint">Choose players from the team's roster; nobody can play two positions at once. Save updates whenever you make a defensive change. Empty positions are allowed.</p>
+      <p class="play-form-error" data-defense-error role="alert" hidden></p>
+      <div class="modal-footer"><button class="btn subtle" type="button" data-command="close-defense">Cancel</button>
+        <button class="btn primary" type="submit">Save defensive lineup</button></div>
+    </form>
+  </div></div>`;
+}
+function downloadRosterTemplate() {
+  const csv='number,name,position,batting_order\\n12,Alex Rivera,SS,1\\n7,Jordan Brooks,CF,2\\n24,Taylor Lane,P,3\\n';
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;link.download='opensideline-roster-template.csv';link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 function render() {
   const v = replayGame(game);
   document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
-  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
 }
 function perform(event) {
   try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
