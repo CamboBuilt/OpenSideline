@@ -17,7 +17,8 @@ const assert = (condition, text) => { if (!condition) throw new Error(text); };
 const BASE_LABELS = Object.freeze({ 1:'FIRST', 2:'SECOND', 3:'THIRD', 4:'HOME' });
 const RESULT_BATTER = Object.freeze({
   SINGLE:'FIRST', DOUBLE:'SECOND', TRIPLE:'THIRD', HOME_RUN:'HOME',
-  ERROR:'FIRST', OUT:'OUT', SAC_FLY:'OUT', FIELDERS_CHOICE:'FIRST',
+  ERROR:'FIRST', OUT:'OUT', GROUND_OUT:'OUT', LINE_OUT:'OUT', FLY_OUT:'OUT',
+  SAC_FLY:'OUT', FIELDERS_CHOICE:'FIRST',
 });
 const BASE_NUM = Object.freeze({ FIRST:1, SECOND:2, THIRD:3, HOME:4 });
 const RUNNER_DESTINATIONS = new Set(['HOLD', 'FIRST', 'SECOND', 'THIRD', 'HOME', 'OUT']);

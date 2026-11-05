@@ -7,14 +7,17 @@
  * v0.2 adds opt-in explicit in-play runner destinations; v0.1 journal events replay unchanged.
  */
 import { applyExplicitPlay } from './advancement.mjs';
+import { validateFieldingAnnotation, describeFielding } from './fielding.mjs';
+export { FIELDING_POSITIONS, HIT_LOCATIONS } from './fielding.mjs';
 export { defaultPlayAdvances } from './advancement.mjs';
 export const ENGINE_VERSION = '0.2.0';
 export const PLAY_RESULTS = Object.freeze({
   SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple', HOME_RUN: 'Home run',
-  OUT: 'Out in play', ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
+  OUT: 'Other out', GROUND_OUT: 'Groundout', LINE_OUT: 'Lineout', FLY_OUT: 'Flyout',
+  ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
   FIELDERS_CHOICE: "Fielder's choice",
 });
-const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT']);
+const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT', 'PLAY_ANNOTATION']);
 const STATS = () => ({ PA: 0, AB: 0, H: 0, R: 0, RBI: 0, BB: 0, SO: 0, HBP: 0, doubles: 0, triples: 0, HR: 0, SF: 0, SB: 0, CS: 0 });
 const assert = (condition, text) => { if (!condition) throw new Error(text); };
 const sanitize = (str, max = 50) => String(str ?? '').trim().slice(0, max);
@@ -197,7 +200,7 @@ function process(s, game, event) {
         endHalfIfNeeded(s);
       } else {
         finishPA(s, game, { ab: true });
-        s.outs++; label = `${batter.name} • out in play`;
+        s.outs++; label = `${batter.name} • ${PLAY_RESULTS[result]}`;
         endHalfIfNeeded(s);
       }
       break;
@@ -217,6 +220,23 @@ function process(s, game, event) {
       label = `${runner.name} ${event.type === 'STOLEN_BASE' ? 'steals' : 'advances to'} ${to === 4 ? 'home' : `${['', 'first', 'second', 'third'][to]} base`}`;
       break;
     }
+    case 'PLAY_ANNOTATION': {
+      const target=event.target;
+      assert(Number.isInteger(target) && target>=0 && target<s.eventCount,
+        'Fielding annotation needs a previous play index.');
+      assert(game.events[target]?.type==='BALL_IN_PLAY',
+        'Fielding details can only annotate a batted-ball play.');
+      const log=s.playLog.find(item=>item.index===target+1);
+      assert(log, 'The original play could not be found.');
+      const defend=log.half==='top' ? 'home' : 'away';
+      const roster=game.teams[defend].roster;
+      const details=validateFieldingAnnotation(event.fielding,roster);
+      log.fielding=details;
+      log.baseLabel ??= log.label;
+      log.label=`${log.baseLabel} • ${describeFielding(details,roster)}`;
+      label='Fielding details updated';
+      break;
+    }
     case 'RUNNER_OUT': {
       const from = Number(event.from);
       assert([1, 2, 3].includes(from) && s.bases[from], 'Choose an occupied base.');
@@ -228,7 +248,7 @@ function process(s, game, event) {
       break;
     }
   }
-  addLog(s, event, label, prev, game);
+  if (event.type !== 'PLAY_ANNOTATION') addLog(s, event, label, prev, game);
   s.eventCount++;
   return s;
 }
@@ -237,6 +257,7 @@ export function replayGame(game) {
   assert(game && game.schemaVersion === 1 && game.teams && Array.isArray(game.events), 'Invalid or unsupported game file.');
   // Incomplete/invalid external data must not be trusted simply because it parses as JSON.
   const validated = {
+    events: game.events, // annotation lookups use the already validated, ordered journal
     teams: {
       home: { name: sanitize(game.teams.home?.name, 60), roster: validateRoster(game.teams.home?.roster, 'home') },
       away: { name: sanitize(game.teams.away?.name, 60), roster: validateRoster(game.teams.away?.roster, 'away') },

@@ -16,6 +16,13 @@
 - [ ] Different game length, mercy rules, tie and extra-inning rules
 - [ ] Import/export stability, schema migrations, accessibility testing
 
+## v0.2.1: Scorer experience / outdoor legibility
+- [x] Brighter high-contrast light theme with responsive controls
+- [x] Compact sticky game scoreboard, inning, count, and occupied bases
+- [x] Main pitch and at-bat outcomes visible without opening a menu
+- [x] Runner bottom sheet with validated quick-save presets and one-tap destination chips
+- [ ] Real-device usability tests in bright sunlight and with accessibility tools
+
 ## v0.3: Teams + real synchronized game updates
 - [ ] User identities, team roles and permissions
 - [ ] Secure server event journal, audit history and sync/conflict resolution
