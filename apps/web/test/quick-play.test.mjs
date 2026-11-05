@@ -61,3 +61,32 @@ test('no runner-to-score suggestion on a third-out play',()=>{
   const options=choices(g,'OUT');
   assert.equal(options.some(p=>p.label==='Runner on 3rd scores'),false);
 });
+
+for (const type of ['GROUND_OUT', 'LINE_OUT', 'FLY_OUT']) {
+  test(`${type} offers a valid one-tap out with the bases empty`, () => {
+    const g = game();
+    const presets = choices(g, type);
+    assert.equal(presets.length, 1);
+    const v = replayGame(apply(g, type, presets[0]));
+    assert.equal(v.outs, 1);
+    assert.equal(v.playerStats.away.a1.AB, 1);
+    assert.equal(v.hits.away, 0);
+  });
+}
+
+test('groundout offers a validated runner-from-third RBI shortcut', () => {
+  const g = hit(game(), 'TRIPLE');
+  const preset = choices(g, 'GROUND_OUT').find(p => p.label === 'Runner on 3rd scores (RBI)');
+  assert.ok(preset);
+  const v = replayGame(apply(g, 'GROUND_OUT', preset));
+  assert.equal(v.scores.away, 1);
+  assert.equal(v.playerStats.away.a2.RBI, 1);
+  assert.equal(v.outs, 1);
+});
+
+test('groundout run shortcut is unavailable on the third out', () => {
+  let g = hit(game(), 'TRIPLE');
+  g = hit(g, 'OUT');
+  g = hit(g, 'OUT');
+  assert.ok(!choices(g, 'GROUND_OUT').some(p => /scores/.test(p.label)));
+});
