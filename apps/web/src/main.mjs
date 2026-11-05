@@ -144,14 +144,14 @@ function renderScorer(v) {
   const batter = v.batter;
   return `<div class="shell">
     <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
-      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
+      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
       <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
       <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.2.3 preview</div></div>
     </aside>
-    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
+    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
       <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Live scorer<span class="accent-dot">.</span></h1><p>Keep your eyes on the game, not the menus.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
       <div class="sticky-hud">${scoreHeader(v,true)}<div class="hud-bottom"><span>AT BAT <strong>${safe(v.batter.name)}</strong></span><span class="hud-count">COUNT ${v.balls}–${v.strikes} · ${v.outs} OUT</span><span class="hud-runners">ON BASE ${[1,2,3].map(b => `<b class="${v.bases[b] ? 'active' : ''}" aria-label="${['','First','Second','Third'][b]} base ${v.bases[b] ? 'occupied' : 'empty'}">${b}</b>`).join('')}</span></div></div>
-      <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><span class="pill">${safe(game.teams[v.batting].name)}</span></div>
+      <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><div class="card-top-tools"><button type="button" class="btn defense-open" data-command="open-defense">Defense ${icon('arrow',13)}</button><span class="pill">${safe(game.teams[v.batting].name)}</span></div></div>
         <div class="at-bat-strip">
           <div class="batter-block"><div class="batter-avatar">${safe(batter.number || '—')}</div><div><div class="batter-title">${safe(batter.name)}</div><div class="batter-sub">${safe(game.teams[v.batting].name)} · Batting #${(v.battingIndex[v.batting] % game.teams[v.batting].roster.length) + 1}</div></div></div>
           <div class="mini-field" aria-label="Current baserunners">${renderBases(v)}<div class="runner-summary">${[1,2,3].filter(base => v.bases[base]).map(base => `<span>${['','1B','2B','3B'][base]}: ${safe(v.bases[base].name)}</span>`).join('') || '<span>Bases empty</span>'}</div></div>
@@ -263,6 +263,7 @@ function fieldingModal(v) {
   const defending=log.half==='top'?'home':'away';
   const defenders=game.teams[defending].roster;
   const result=game.events[target].result;
+  const originalDefense=log.defenseAssignments ?? {};
   const presets=defensePresets[result] ?? [];
   const zones=Object.entries(locationCoordinates).map(([zone,[x,y]])=>
     `<button type="button" class="field-zone ${fieldingDraft.location===zone?'selected':''}" data-hit-location="${zone}"
@@ -276,7 +277,7 @@ function fieldingModal(v) {
       <div class="touch-position"><b>${step.position} · ${safe(FIELDING_POSITIONS[step.position])}</b></div>
       <label class="touch-player-label"><span class="visually-hidden">Actual player for defensive position ${step.position}</span><select data-player-slot="${i}">
         <option value="">Player not assigned</option>
-        ${defenders.map(p=>`<option value="${safe(p.id)}" ${step.playerId===p.id?'selected':''}>${safe('#'+(p.number||'—')+' '+p.name)}</option>`).join('')}
+        ${defenders.map(p=>`<option value="${safe(p.id)}" ${(step.playerId??originalDefense[String(step.position)])===p.id?'selected':''}>${safe('#'+(p.number||'—')+' '+p.name)}</option>`).join('')}
       </select></label>
     </div>`).join('');
   return `<div class="modal-backdrop" data-command="close-fielding"><div class="modal fielding-modal" role="dialog" aria-modal="true" aria-labelledby="fielding-title">
@@ -293,13 +294,13 @@ function fieldingModal(v) {
           <button type="button" data-hit-location="">Clear location</button></div>
       </section>
       <section class="fielding-section">
-        <h3>Who made the play?</h3><p>Tap fielding positions in sequence. Example: 6 → 3 is shortstop to first base.</p>
+        <h3>Who made the play?</h3><p>Tap positions in order, e.g. 6 → 3. The player names are filled from the defensive lineup saved at the time of this play.</p>
         ${presets.length ? `<div class="sequence-presets">${presets.map(seq=>`<button type="button" data-chain-preset="${seq.join('-')}">${seq.join('–')}</button>`).join('')}</div>` : ''}
         <div class="fielding-position-grid" role="group" aria-label="Tap fielders in order">${positions}</div>
         <div class="chain-toolbar"><strong>${fieldingDraft.sequence.map(x=>x.position).join('–') || 'No fielder selected'}</strong>
           <button type="button" data-command="remove-fielder" ${fieldingDraft.sequence.length?'':'disabled'}>Undo fielder</button>
           <button type="button" data-command="clear-fielders">Clear</button></div>
-        ${touches ? `<div class="fielder-touches"><p>Assign the actual players (optional, but needed to identify them by name):</p>${touches}</div>`:''}
+        ${touches ? `<div class="fielder-touches"><p>Players suggested from the saved defensive lineup for this play. Override any position if needed:</p>${touches}</div>`:''}
       </section></div>
       <p class="play-warning">Positions 1–9 follow baseball's scoring shorthand. Player names are never guessed from batting order. Putouts and assists are not yet calculated.</p>
       <p class="play-form-error" data-fielding-error role="alert" hidden></p>
@@ -384,13 +385,19 @@ function downloadGame() {
   toast('Game file exported. Keep youth-player information private.');
 }
 app.addEventListener('click', event => {
-  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset]');
+  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset],button[data-defense-team]');
   if (!trigger) {
-    if (event.target.classList.contains('modal-backdrop')) { showSetup = false; showPlay = null; fieldingDraft=null; render(); }
+    if (event.target.classList.contains('modal-backdrop')) { showSetup = false; showPlay = null; fieldingDraft=null; defenseDraft=null; render(); }
     return;
   }
   if (trigger.disabled) return;
-  if (fieldingDraft && trigger.dataset.hitLocation !== undefined) {
+  if (defenseDraft && trigger.dataset.defenseTeam) {
+    openDefenseEditor(trigger.dataset.defenseTeam); return;
+  }
+  if (defenseDraft && trigger.dataset.defenseTeam === 'away') {
+    openDefenseEditor('away');return;
+  }
+  if (defenseDraft && trigger.dataset.hitLocation !== undefined) {
     fieldingDraft.location=trigger.dataset.hitLocation || null; render(); return;
   }
   if (fieldingDraft && trigger.dataset.fielderPosition) {
@@ -425,7 +432,11 @@ app.addEventListener('click', event => {
   switch (trigger.dataset.command) {
     case 'undo': if (game.events.length) commit(undoEvent(game)); break;
     case 'export': downloadGame(); break;
-    case 'open-setup': showSetup = true; showPlay = null; fieldingDraft=null; render(); break;
+    case 'open-setup': showSetup = true; showPlay = null; fieldingDraft=null; defenseDraft=null; importedSetupPlayers={home:null,away:null}; render(); break;
+    case 'open-defense': openDefenseEditor(replayGame(game).fielding);break;
+    case 'close-defense': defenseDraft=null;render();break;
+    case 'clear-defense': if(defenseDraft){defenseDraft.assignments=Object.fromEntries(Array.from({length:9},(_,i)=>[String(i+1),null]));render();}break;
+    case 'download-roster-template': downloadRosterTemplate();break;
     case 'open-fielding': openFieldingEditor(Number(trigger.dataset.target)); break;
     case 'close-fielding': fieldingDraft=null; render(); break;
     case 'remove-fielder': if (fieldingDraft?.sequence.length) {fieldingDraft.sequence.pop();render();} break;
@@ -436,7 +447,44 @@ app.addEventListener('click', event => {
     case 'toggle-advanced': showMoreActions = !showMoreActions; render(); break;
   }
 });
-app.addEventListener('change', e => {
+app.addEventListener('change', async e => {
+  if (e.target.matches('[data-roster-import]')) {
+    const side=e.target.dataset.rosterImport,file=e.target.files?.[0];
+    if (!file || !['home','away'].includes(side)) return;
+    const box=document.querySelector('#import-status-'+side);
+    try{
+      if(file.size>128*1024)throw new Error('Roster file is too large (128 KB limit).');
+      const parsed=parseRosterImport(await file.text(),file.name,side);
+      if(!showSetup) return;
+      const textArea=document.querySelector('#'+side+'-roster'),teamName=document.querySelector('#'+side+'-name');
+      if(!textArea||!teamName)return;
+      textArea.value=importedRosterText(parsed.players);
+      if(parsed.teamName)teamName.value=parsed.teamName;
+      importedSetupPlayers[side]=parsed.players;
+      if(box){box.textContent='Imported '+parsed.players.length+' players; '+parsed.players.filter(p=>p.position!==null).length+' starting positions.';box.classList.remove('import-error');}
+    }catch(err){if(box){box.textContent=err.message||'Could not import file.';box.classList.add('import-error');}}
+    e.target.value='';return;
+  }
+  if (e.target.matches('[data-import-defense]') && defenseDraft) {
+    const file=e.target.files?.[0];if(!file)return;
+    const side=defenseDraft.side,box=document.querySelector('#defense-import-status');
+    try {
+      if(file.size>128*1024)throw new Error('Lineup file is too large (128 KB limit).');
+      const imported=parseRosterImport(await file.text(),file.name,side);
+      if(!defenseDraft || defenseDraft.side!==side)return;
+      const assignments=matchImportedDefense(game.teams[side].roster,imported.players);
+      if(!Object.keys(assignments).length)throw new Error('No matching roster members with defensive positions were found. Import the roster from Game Setup first.');
+      defenseDraft.assignments=Object.fromEntries(Array.from({length:9},(_,i)=>[String(i+1),assignments[String(i+1)]??null]));
+      render();
+      const status=document.querySelector('#defense-import-status');if(status)status.textContent=Object.keys(assignments).length+' positions loaded; review and save.';
+    }catch(err){if(box){box.textContent=err.message||'Could not import lineup.';box.classList.add('import-error');}}
+    e.target.value='';return;
+  }
+  if (e.target.matches('[data-defense-position]') && defenseDraft) {
+    const position=e.target.dataset.defensePosition,id=e.target.value||null;
+    if(id)for(const key of Object.keys(defenseDraft.assignments))if(key!==position&&defenseDraft.assignments[key]===id)defenseDraft.assignments[key]=null;
+    defenseDraft.assignments[position]=id;render();return;
+  }
   if (e.target.matches('[data-player-slot]') && fieldingDraft) {
     const slot=Number(e.target.dataset.playerSlot);
     if (Number.isInteger(slot) && fieldingDraft.sequence[slot])
@@ -452,6 +500,19 @@ app.addEventListener('change', e => {
   }
 });
 app.addEventListener('submit', e => {
+  if(e.target.id==='defense-form'){
+    e.preventDefault();
+    if(!defenseDraft)return;
+    try {
+      const next=appendEvent(game,{type:'DEFENSIVE_LINEUP',side:defenseDraft.side,
+        assignments:{...defenseDraft.assignments},at:new Date().toISOString()});
+      defenseDraft=null;commit(next);
+    }catch(err){
+      const box=e.target.querySelector('[data-defense-error]');
+      if(box){box.textContent=err.message||'Invalid defensive lineup.';box.hidden=false;}
+    }
+    return;
+  }
   if (e.target.id === 'fielding-form') {
     e.preventDefault();
     if (!fieldingDraft) return;
@@ -488,8 +549,14 @@ app.addEventListener('submit', e => {
   if (game.events.length && !confirm('Start a new game? Current plays will be cleared.')) return;
   const form = new FormData(e.target);
   try {
-    const next = createGame({ homeName: form.get('homeName'), awayName: form.get('awayName'), homeRoster: parseRoster(form.get('homeRoster'),'home'), awayRoster: parseRoster(form.get('awayRoster'),'away') });
-    showSetup=false; showPlay=null; fieldingDraft=null; selectedTab='plays'; showMoreActions=false;
+    let next = createGame({ homeName: form.get('homeName'), awayName: form.get('awayName'), homeRoster: parseRoster(form.get('homeRoster'),'home'), awayRoster: parseRoster(form.get('awayRoster'),'away') });
+    for(const side of ['away','home']){
+      if(!importedSetupPlayers[side])continue;
+      const assignments=matchImportedDefense(next.teams[side].roster, importedSetupPlayers[side]);
+      if(Object.keys(assignments).length)next=appendEvent(next,{type:'DEFENSIVE_LINEUP',side,assignments,at:new Date().toISOString()});
+    }
+    importedSetupPlayers={home:null,away:null};
+    showSetup=false; showPlay=null; fieldingDraft=null; defenseDraft=null; selectedTab='plays'; showMoreActions=false;
     commit(next); toast('New game created. Ready for the first pitch.');
   } catch(e) { toast(e.message); }
 });
