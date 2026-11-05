@@ -109,10 +109,11 @@ function playActions(v) {
   const hasRunner = [1,2,3].some(base => v.bases[base]);
   const quick = [
     ['SINGLE','Single','hit'], ['DOUBLE','Double','hit'], ['TRIPLE','Triple','hit'],
-    ['HOME_RUN','Home run','homer'], ['OUT','Out','out'],
+    ['HOME_RUN','Home run','homer'],
+    ['GROUND_OUT','Ground out','out'], ['LINE_OUT','Line out','out'], ['FLY_OUT','Fly out','out'],
   ];
   const extra = [
-    ['ERROR','Reached on error'], ['SAC_FLY','Sacrifice fly'],
+    ['ERROR','Reached on error'], ['SAC_FLY','Sacrifice fly'], ['OUT','Other out'],
     ['FIELDERS_CHOICE',"Fielder's choice"],
   ];
   return `<div class="actions-head"><div><h3>Pitch by pitch</h3><p>Big buttons, ready for the next pitch.</p></div></div>
