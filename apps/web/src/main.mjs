@@ -115,7 +115,7 @@ function playActions(v) {
     ['ERROR','Reached on error'], ['SAC_FLY','Sacrifice fly'],
     ['FIELDERS_CHOICE',"Fielder's choice"],
   ];
-  return \`<div class="actions-head"><div><h3>Pitch by pitch</h3><p>Big buttons, ready for the next pitch.</p></div></div>
+  return `<div class="actions-head"><div><h3>Pitch by pitch</h3><p>Big buttons, ready for the next pitch.</p></div></div>
     <div class="pitch-buttons">
       <button type="button" data-action="BALL" class="pitch-btn ball"><b>Ball</b><span>Add a ball</span></button>
       <button type="button" data-action="STRIKE" class="pitch-btn strike"><b>Strike</b><span>Add a strike</span></button>
@@ -123,17 +123,17 @@ function playActions(v) {
     </div>
     <div class="actions-head hit-head"><div><h3>At-bat result</h3><p>One tap when bases are empty. With runners on, pick a quick finish.</p></div></div>
     <div class="play-grid">
-      \${quick.map(([type,label,cls]) => \`<button type="button" class="play-btn \${cls}" data-result="\${type}"><span>\${type === 'HOME_RUN' ? '✦ ' : ''}\${label}</span>\${icon('arrow',14)}</button>\`).join('')}
-      <button class="play-btn walk" type="button" data-action="WALK"><span>Walk</span>\${icon('arrow',14)}</button>
-      <button class="play-btn hbp" type="button" data-action="HBP"><span>Hit by pitch</span>\${icon('arrow',14)}</button>
+      ${quick.map(([type,label,cls]) => `<button type="button" class="play-btn ${cls}" data-result="${type}"><span>${type === 'HOME_RUN' ? '✦ ' : ''}${label}</span>${icon('arrow',14)}</button>`).join('')}
+      <button class="play-btn walk" type="button" data-action="WALK"><span>Walk</span>${icon('arrow',14)}</button>
+      <button class="play-btn hbp" type="button" data-action="HBP"><span>Hit by pitch</span>${icon('arrow',14)}</button>
     </div>
-    <button type="button" class="advanced-toggle" data-command="toggle-advanced" aria-expanded="\${showMoreActions}" aria-controls="more-plays">\${showMoreActions ? '− Hide other plays & runners' : '+ More plays & runner controls'}</button>
-    <div id="more-plays" \${showMoreActions ? '' : 'hidden'}>
-      <div class="extra-play-grid">\${extra.map(([type,label]) => \`<button type="button" class="play-btn neutral" data-result="\${type}" \${(type === 'SAC_FLY' && !(v.outs < 2 && v.bases[3])) || (type === 'FIELDERS_CHOICE' && !hasRunner) ? 'disabled' : ''}>\${label}\${icon('arrow',14)}</button>\`).join('')}</div>
+    <button type="button" class="advanced-toggle" data-command="toggle-advanced" aria-expanded="${showMoreActions}" aria-controls="more-plays">${showMoreActions ? '− Hide other plays & runners' : '+ More plays & runner controls'}</button>
+    <div id="more-plays" ${showMoreActions ? '' : 'hidden'}>
+      <div class="extra-play-grid">${extra.map(([type,label]) => `<button type="button" class="play-btn neutral" data-result="${type}" ${(type === 'SAC_FLY' && !(v.outs < 2 && v.bases[3])) || (type === 'FIELDERS_CHOICE' && !hasRunner) ? 'disabled' : ''}>${label}${icon('arrow',14)}</button>`).join('')}</div>
       <div class="advanced-actions">
-        \${[1,2,3].map(base => v.bases[base] ? \`<div class="runner-control"><span><b>\${safe(v.bases[base].name)}</b><small>On \${['','1st','2nd','3rd'][base]}</small></span><button type="button" data-advance="\${base}" data-kind="STOLEN_BASE">Steal</button><button type="button" data-advance="\${base}" data-kind="ADVANCE_RUNNER">Advance</button><button type="button" data-advance="\${base}" data-kind="RUNNER_OUT">Out</button></div>\` : '').join('') || '<p class="fineprint">No runners on base.</p>'}
+        ${[1,2,3].map(base => v.bases[base] ? `<div class="runner-control"><span><b>${safe(v.bases[base].name)}</b><small>On ${['','1st','2nd','3rd'][base]}</small></span><button type="button" data-advance="${base}" data-kind="STOLEN_BASE">Steal</button><button type="button" data-advance="${base}" data-kind="ADVANCE_RUNNER">Advance</button><button type="button" data-advance="${base}" data-kind="RUNNER_OUT">Out</button></div>` : '').join('') || '<p class="fineprint">No runners on base.</p>'}
       </div>
-    </div>\`;
+    </div>`;
 }
 function renderScorer(v) {
   const batter = v.batter;
@@ -192,19 +192,19 @@ function playModal(v) {
   const runnerInputs = [1,2,3].filter(base => v.bases[base]).map(base => {
     const key = String(base), value = suggestion.runners[key];
     const options = destinations.filter(target => target === 'HOLD' || target === 'OUT' || target === 'HOME' || numberedBases[target] > base);
-    return \`<fieldset class="play-runner-row"><legend>\${safe(v.bases[base].name)} <small>• started on \${['','1st','2nd','3rd'][base]}</small></legend>
-      <div class="runner-chips">\${options.map(dest => \`<label class="runner-chip"><input type="radio" name="runner-\${base}" value="\${dest}" data-runner-destination="\${base}" \${value === dest ? 'checked' : ''}/><span>\${dest === 'HOLD' ? 'Hold' : dest === 'OUT' ? 'Out' : dest === 'HOME' ? 'Score' : \`\${['','1st','2nd','3rd'][numberedBases[dest]]}\`}</span></label>\`).join('')}</div>
-      <label class="rbi-choice"><input type="checkbox" name="rbi-\${base}" \${suggestion.rbi.includes(key) ? 'checked' : ''} \${value === 'HOME' ? '' : 'disabled'}/> Credit RBI if this runner scores</label>
-    </fieldset>\`;
+    return `<fieldset class="play-runner-row"><legend>${safe(v.bases[base].name)} <small>• started on ${['','1st','2nd','3rd'][base]}</small></legend>
+      <div class="runner-chips">${options.map(dest => `<label class="runner-chip"><input type="radio" name="runner-${base}" value="${dest}" data-runner-destination="${base}" ${value === dest ? 'checked' : ''}/><span>${dest === 'HOLD' ? 'Hold' : dest === 'OUT' ? 'Out' : dest === 'HOME' ? 'Score' : `${['','1st','2nd','3rd'][numberedBases[dest]]}`}</span></label>`).join('')}</div>
+      <label class="rbi-choice"><input type="checkbox" name="rbi-${base}" ${suggestion.rbi.includes(key) ? 'checked' : ''} ${value === 'HOME' ? '' : 'disabled'}/> Credit RBI if this runner scores</label>
+    </fieldset>`;
   }).join('');
-  return \`<div class="modal-backdrop" data-command="close-play"><div class="modal play-modal" role="dialog" aria-modal="true" aria-labelledby="play-title">
-    <div class="modal-head"><div><div class="eyebrow">QUICK FINISH</div><h2 id="play-title">\${safe(PLAY_RESULTS[result])}</h2><p>Batter: <b>\${safe(v.batter.name)}</b>. Tap a common outcome to save it instantly, or adjust each runner below.</p></div><button class="close-button" type="button" data-command="close-play" aria-label="Cancel scoring play">×</button></div>
-    \${presets.length ? \`<section class="preset-section"><div class="preset-label">QUICK SAVE · TAP A RESULT</div><div class="preset-grid">\${presets.map((p,i) => \`<button class="preset-btn" type="button" data-preset="\${i}"><strong>\${safe(p.label)}</strong><span>\${p.advances.batter === 'OUT' ? 'Batter out' : 'Batter on base'} · \${Object.entries(p.advances.runners).map(([base,to]) => \`From \${base}: \${to === 'HOME' ? 'scores' : to.toLowerCase()}\`).join(', ') || 'Bases empty'}</span></button>\`).join('')}</div></section>\` : ''}
-    <form id="play-form"><div class="play-runners"><h3>Customize runner destinations</h3>\${runnerInputs || '<p class="fineprint">Bases empty. Only the batter will be recorded.</p>'}</div>
+  return `<div class="modal-backdrop" data-command="close-play"><div class="modal play-modal" role="dialog" aria-modal="true" aria-labelledby="play-title">
+    <div class="modal-head"><div><div class="eyebrow">QUICK FINISH</div><h2 id="play-title">${safe(PLAY_RESULTS[result])}</h2><p>Batter: <b>${safe(v.batter.name)}</b>. Tap a common outcome to save it instantly, or adjust each runner below.</p></div><button class="close-button" type="button" data-command="close-play" aria-label="Cancel scoring play">×</button></div>
+    ${presets.length ? `<section class="preset-section"><div class="preset-label">QUICK SAVE · TAP A RESULT</div><div class="preset-grid">${presets.map((p,i) => `<button class="preset-btn" type="button" data-preset="${i}"><strong>${safe(p.label)}</strong><span>${p.advances.batter === 'OUT' ? 'Batter out' : 'Batter on base'} · ${Object.entries(p.advances.runners).map(([base,to]) => `From ${base}: ${to === 'HOME' ? 'scores' : to.toLowerCase()}`).join(', ') || 'Bases empty'}</span></button>`).join('')}</div></section>` : ''}
+    <form id="play-form"><div class="play-runners"><h3>Customize runner destinations</h3>${runnerInputs || '<p class="fineprint">Bases empty. Only the batter will be recorded.</p>'}</div>
     <p class="play-warning">Confirm the RBI choices. Runs on a third-out play require additional rules and remain unsupported.</p>
     <p class="play-form-error" data-play-error role="alert" hidden></p>
     <div class="modal-footer"><button class="btn subtle" type="button" data-command="close-play">Cancel</button><button class="btn primary" type="submit">Save custom play</button></div></form>
-  </div></div>\`;
+  </div></div>`;
 }
 function render() {
   const v = replayGame(game);
