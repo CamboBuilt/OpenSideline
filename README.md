@@ -28,6 +28,17 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.3 alpha: Optional private accounts and cloud saves
+
+- **Local-first scorer remains unchanged**. No cloud upload occurs until the user explicitly saves a game.
+- Optional `My OpenSideline` email sign-in, owner-only private team creation, game save/load, and conflict-safe server revisions.
+- Schema, SQL migration and Row Level Security policies live in `supabase/migrations/`.
+- Cloud requires a Supabase project, the applied SQL migration and **public-only** frontend settings; without those, the Cloud panel clearly says it is unconfigured.
+- [Cloud setup & live security-test checklist](docs/CLOUD-SETUP.md). Follow before entering any real youth-team information.
+- **Not included yet:** team invitations, automatic sync, live internet spectators, protected QR lineup sharing, and verified real-database integration tests.
+- **Offline app shell:** Installable PWA manifest, original icon, and service-worker caching for first-party static assets. No cloud sessions or player data are cached by the service worker. See [Offline installation guide](docs/OFFLINE-APP.md).
+
+
 ## v0.2.5: Active lineups, substitutions, fielding stats and local season totals
 
 - Batting order is separate from the roster: continuous / nine / custom formats, bench players don't bat automatically.

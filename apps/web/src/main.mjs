@@ -3,6 +3,8 @@ import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPl
 import { getQuickPlayPresets } from './quick-play.mjs';
 import { parseRosterImport, importedRosterText, matchImportedDefense } from './roster-import.mjs';
 import { summarizeSeason, seasonCsv } from './season-summary.mjs';
+import { isCloudConfigured, connectCloud } from './cloud-runtime.mjs';
+import { renderCloudPanel } from './cloud-panel.mjs';
 
 const STORAGE_KEY = 'opensideline:baseball:v1';
 const ARCHIVE_KEY = 'opensideline:baseball:archive:v1';
@@ -35,6 +37,15 @@ let showPlay = null;
 let fieldingDraft = null;
 let defenseDraft = null;
 let showLineup = false;
+let showCloud = false;
+let cloudBusy = false;
+let cloudGateway = null;
+let cloudUser = null;
+let cloudGames = [];
+let cloudTeams = [];
+let cloudMessage = '';
+let cloudTeamChoice = '';
+let cloudKnownVersions = new Map();
 let lineupSide='away';
 let importedSetupPlayers = {away:null,home:null};
 let feedback = '';
@@ -197,11 +208,11 @@ function renderScorer(v) {
   const batter = v.batter;
   return `<div class="shell">
     <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
-      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="open-lineup">${icon('people',19)} Batting & substitutions</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
+      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="open-lineup">${icon('people',19)} Batting & substitutions</button><button class="nav-item" data-command="open-cloud">${icon('share',19)} My OpenSideline</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
       <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
-      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.2.5 preview</div></div>
+      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.3 cloud alpha</div></div>
     </aside>
-    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-lineup">${icon('people',16)} Lineup</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
+    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-cloud" title="Account and private cloud saves">${icon('people',16)} ${cloudUser?'Account':'Cloud'}</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-lineup">${icon('people',16)} Lineup</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
       <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Live scorer<span class="accent-dot">.</span></h1><p>Keep your eyes on the game, not the menus.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
       <div class="sticky-hud">${scoreHeader(v,true)}<div class="hud-bottom"><span>AT BAT <strong>${safe(v.batter.name)}</strong></span><span class="hud-count">COUNT ${v.balls}–${v.strikes} · ${v.outs} OUT</span><span class="hud-runners">ON BASE ${[1,2,3].map(b => `<b class="${v.bases[b] ? 'active' : ''}" aria-label="${['','First','Second','Third'][b]} base ${v.bases[b] ? 'occupied' : 'empty'}">${b}</b>`).join('')}</span></div></div>
       <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><div class="card-top-tools"><button type="button" class="btn defense-open" data-command="open-defense">Defense ${icon('arrow',13)}</button><span class="pill">${safe(game.teams[v.batting].name)}</span></div></div>
@@ -219,7 +230,7 @@ function renderScorer(v) {
         <div class="timeline-bottom"><div>${icon('info',16)} <span>Game data is saved in this browser only.</span></div><button data-command="export">Export game ${icon('arrow',15)}</button></div>
       </section></div>
       <details class="score-breakdown"><summary>Inning-by-inning score</summary>${lineScore(v)}</details>
-      <div class="footer-note"><span>OpenSideline <b>v0.2.5 preview</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
+      <div class="footer-note"><span>OpenSideline <b>v0.3 cloud alpha</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
     </div></main></div>`;
 }
 function renderSpectator(v) {
@@ -497,10 +508,100 @@ function downloadRosterTemplate() {
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+
+function cloudStatus(text){
+  cloudMessage=String(text??'').slice(0,250);
+  render();
+}
+async function refreshCloudData(){
+  if(!cloudGateway || !cloudUser) return;
+  const userId=cloudUser.id;
+  const [games,teams]=await Promise.all([cloudGateway.listGames(),cloudGateway.listTeams()]);
+  if(cloudUser?.id!==userId)return;
+  cloudGames=games;
+  cloudTeams=teams;
+  if(cloudTeamChoice && !teams.some(t=>t.id===cloudTeamChoice))cloudTeamChoice='';
+  render();
+}
+async function initializeCloud(){
+  if(!isCloudConfigured() || cloudGateway || cloudBusy)return;
+  cloudBusy=true;render();
+  try{
+    const gateway=await connectCloud();
+    cloudGateway=gateway;
+    gateway.onAuthStateChange((event,session)=>{
+      const nextUser=session?.user??null;
+      if(nextUser?.id!==cloudUser?.id){
+        cloudKnownVersions=new Map();
+        cloudGames=[];cloudTeams=[];cloudTeamChoice='';
+      }
+      cloudUser=nextUser;
+      if(event==='SIGNED_OUT')cloudMessage='Signed out. Your browser-local game is unchanged.';
+      render();
+    });
+    try{cloudUser=await gateway.getUser()}catch{cloudUser=null}
+    if(cloudUser)await refreshCloudData();
+  }catch(error){
+    cloudMessage=error.message||'Cloud connection failed.';
+  }finally{
+    cloudBusy=false;render();
+  }
+}
+function openCloud(){
+  showCloud=true;
+  showSetup=false;showPlay=null;fieldingDraft=null;
+  defenseDraft=null;showLineup=false;
+  render();
+  if(isCloudConfigured()&&!cloudGateway)void initializeCloud();
+}
+async function runCloudAction(action){
+  if(!cloudGateway || cloudBusy)return;
+  cloudBusy=true;render();
+  try{
+    if(action==='signout'){
+      await cloudGateway.signOut();
+      cloudUser=null;cloudGames=[];cloudTeams=[];
+      cloudKnownVersions.clear();cloudTeamChoice='';
+      cloudMessage='Signed out. Your local game is unchanged.';
+    }else if(action==='refresh'){
+      await refreshCloudData();
+      cloudMessage='Cloud list refreshed.';
+    }else if(action==='save'){
+      const snapshot=JSON.parse(JSON.stringify(game));
+      const expectedVersion=cloudKnownVersions.get(snapshot.id)??null;
+      const saved=await cloudGateway.saveGame(snapshot,{
+        expectedVersion,teamId:cloudTeamChoice||null,
+      });
+      cloudKnownVersions.set(snapshot.id,saved.version);
+      cloudMessage='Saved privately to your cloud account — revision '+saved.version+'.';
+      await refreshCloudData();
+    }
+  }catch(error){
+    cloudMessage=error.name==='CloudConflictError'
+      ?'Cloud version conflict. Download a local backup, then refresh and open the cloud version before trying again.'
+      :error.message||'Cloud request failed. Local scoring is still available.';
+  }finally{cloudBusy=false;render()}
+}
+function openCloudGame(index){
+  const entry=cloudGames[index];
+  if(!entry || !cloudUser)return;
+  try{
+    const snapshot=JSON.parse(JSON.stringify(entry.snapshot));
+    replayGame(snapshot);
+    if(game.events.length && game.id!==snapshot.id &&
+       !confirm('Open this cloud game? Your current game will be copied to your local archive first. Export a backup if needed.'))return;
+    archiveGame(game);
+    cloudKnownVersions.set(snapshot.id,entry.version);
+    showCloud=false;
+    cloudMessage='Cloud game opened locally. Save when you want to publish your next edits.';
+    commit(snapshot);
+  }catch(error){cloudStatus(error.message||'Invalid cloud game')}
+}
+
 function render() {
   const v = replayGame(game);
   document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
-  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (showLineup && displayMode === 'scorer' ? lineupModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (fieldingDraft && displayMode === 'scorer' ? fieldingModal(v) : '') + (defenseDraft && displayMode === 'scorer' ? defenseModal(v) : '') + (showLineup && displayMode === 'scorer' ? lineupModal(v) : '') + (showCloud && displayMode === 'scorer' ? renderCloudPanel({configured:isCloudConfigured(),loading:cloudBusy&&!cloudGateway,user:cloudUser,games:cloudGames,teams:cloudTeams,message:cloudMessage,selectedTeam:cloudTeamChoice},safe) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
 }
 function perform(event) {
   try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
@@ -523,12 +624,14 @@ function downloadGame() {
   toast('Game file exported. Keep youth-player information private.');
 }
 app.addEventListener('click', event => {
-  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset],button[data-defense-team],button[data-lineup-team]');
+  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset],button[data-defense-team],button[data-lineup-team],button[data-cloud-action],button[data-cloud-load]');
   if (!trigger) {
-    if (event.target.classList.contains('modal-backdrop')) { showSetup=false; showPlay=null; fieldingDraft=null; defenseDraft=null; showLineup=false; render(); }
+    if (event.target.classList.contains('modal-backdrop')) { showSetup=false;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;showCloud=false;render(); }
     return;
   }
   if (trigger.disabled) return;
+  if(trigger.dataset.cloudAction){void runCloudAction(trigger.dataset.cloudAction);return;}
+  if(trigger.dataset.cloudLoad!==undefined){openCloudGame(Number(trigger.dataset.cloudLoad));return;}
   if(showLineup&&trigger.dataset.lineupTeam){lineupSide=trigger.dataset.lineupTeam;render();return;}
   if (defenseDraft && trigger.dataset.defenseTeam) {
     openDefenseEditor(trigger.dataset.defenseTeam); return;
@@ -572,10 +675,12 @@ app.addEventListener('click', event => {
     case 'undo': if (game.events.length) commit(undoEvent(game)); break;
     case 'export': downloadGame(); break;
     case 'export-season': downloadSeason();break;
-    case 'open-setup': showSetup=true;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;importedSetupPlayers={home:null,away:null};render();break;
-    case 'open-defense': showLineup=false;openDefenseEditor(replayGame(game).fielding);break;
-    case 'open-lineup': showLineup=true;lineupSide=replayGame(game).batting;showSetup=false;fieldingDraft=null;defenseDraft=null;showPlay=null;render();break;
+    case 'open-setup': showSetup=true;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;showCloud=false;importedSetupPlayers={home:null,away:null};render();break;
+    case 'open-defense': showLineup=false;showCloud=false;openDefenseEditor(replayGame(game).fielding);break;
+    case 'open-lineup': showLineup=true;lineupSide=replayGame(game).batting;showSetup=false;fieldingDraft=null;defenseDraft=null;showCloud=false;showPlay=null;render();break;
     case 'close-lineup': showLineup=false;render();break;
+    case 'open-cloud': openCloud();break;
+    case 'close-cloud': showCloud=false;render();break;
     case 'close-defense': defenseDraft=null;render();break;
     case 'clear-defense': if(defenseDraft){defenseDraft.assignments=Object.fromEntries(Array.from({length:9},(_,i)=>[String(i+1),null]));render();}break;
     case 'download-roster-template': downloadRosterTemplate();break;
@@ -590,6 +695,7 @@ app.addEventListener('click', event => {
   }
 });
 app.addEventListener('change', async e => {
+  if(e.target.matches('[data-cloud-team]')){cloudTeamChoice=e.target.value||'';return;}
   if(e.target.matches('#game-preset')){
     const preset=LEAGUE_PRESETS[e.target.value];if(!preset)return;
     const mode=document.querySelector('#batting-mode'),innings=document.querySelector('#game-innings'),reentry=document.querySelector('#game-reentry');
@@ -666,6 +772,28 @@ app.addEventListener('change', async e => {
   }
 });
 app.addEventListener('submit', e => {
+  if(e.target.id==='cloud-login-form'){
+    e.preventDefault();
+    if(!cloudGateway||cloudBusy)return;
+    const email=new FormData(e.target).get('email');
+    cloudBusy=true;render();
+    void cloudGateway.emailSignIn(email,location.origin+location.pathname)
+      .then(()=>{cloudMessage='Check your email for a sign-in link. Return to this browser after opening it.';})
+      .catch(error=>{cloudMessage=error.message||'Unable to send sign-in email.';})
+      .finally(()=>{cloudBusy=false;render()});
+    return;
+  }
+  if(e.target.id==='cloud-team-form'){
+    e.preventDefault();
+    if(!cloudGateway||cloudBusy)return;
+    const name=new FormData(e.target).get('name');
+    cloudBusy=true;render();
+    void cloudGateway.createTeam(name)
+      .then(async team=>{cloudTeamChoice=team.id;cloudMessage='Team created privately.';await refreshCloudData();})
+      .catch(error=>{cloudMessage=error.message||'Unable to create team.';})
+      .finally(()=>{cloudBusy=false;render()});
+    return;
+  }
   if(e.target.matches('[data-substitution-slot]')){
     e.preventDefault();
     const slot=Number(e.target.dataset.substitutionSlot),form=new FormData(e.target);
@@ -772,3 +900,11 @@ channel?.addEventListener('message', e => {
   try { replayGame(e.data.game); game = e.data.game; render(); } catch { /* discard malformed messages */ }
 });
 render();
+if (displayMode==='scorer' && isCloudConfigured()) void initializeCloud();
+if(typeof navigator!=='undefined' && 'serviceWorker' in navigator &&
+   (location.protocol==='https:' || location.hostname==='localhost')){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/service-worker.js')
+      .catch(()=>{ /* Offline install is optional; local scoring still works. */ });
+  });
+}
