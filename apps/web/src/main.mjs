@@ -1,4 +1,4 @@
-import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, formatAvg, formatObp, formatSlg } from '../../../packages/scoring-engine/src/index.mjs';
+import { createGame, replayGame, appendEvent, undoEvent, PLAY_RESULTS, defaultPlayAdvances, formatAvg, formatObp, formatSlg } from '../../../packages/scoring-engine/src/index.mjs';
 
 const STORAGE_KEY = 'opensideline:baseball:v1';
 const app = document.querySelector('#app');
@@ -9,6 +9,7 @@ const displayMode = ['spectator', 'overlay'].includes(query.get('view')) ? query
 let game = readStoredGame();
 let selectedTab = 'plays';
 let showSetup = false;
+let showPlay = null;
 let feedback = '';
 let showMoreActions = false;
 let noticeTimer = null;
@@ -100,13 +101,14 @@ function renderStats(v) {
     const s = v.playerStats[side][p.id];
     return `<tr><td><span class="jersey">${safe(p.number || '–')}</span> ${safe(p.name)}</td><td>${s.AB}</td><td>${s.H}</td><td>${s.R}</td><td>${s.RBI}</td><td>${s.BB}</td><td>${formatAvg(s.H,s.AB)}</td><td>${formatObp(s)}</td></tr>`;
   }).join('')}</tbody></table></div></section>`;
-  return `${statsFor('away')}${statsFor('home')}<p class="fineprint">Automated stats use simplified advancement rules. OBP includes hits, walks and HBP. Advanced scorer judgments, substitutions and pitching stats are not yet implemented.</p>`;
+  return `${statsFor('away')}${statsFor('home')}<p class="fineprint">New plays ask for each runner destination and RBI decision. Existing v0.1 records retain simplified historical rules. Pitching stats, substitutions and some third-out judgments remain unsupported.</p>`;
 }
 function playActions(v) {
   const eligibleSac = v.outs < 2 && Boolean(v.bases[3]);
   const core = [
     ['SINGLE', 'Single', 'hit'], ['DOUBLE','Double','hit'], ['TRIPLE','Triple','hit'], ['HOME_RUN','Home run','homer'],
     ['OUT','Out','out'], ['ERROR','Error','neutral'], ['SAC_FLY','Sac fly','neutral'],
+    ['FIELDERS_CHOICE',"Fielder's choice",'neutral'],
   ];
   return `<div class="actions-head"><div><h3>Record a pitch</h3><p>Tap a pitch result to update the count.</p></div></div>
     <div class="pitch-buttons">
@@ -114,8 +116,8 @@ function playActions(v) {
       <button data-action="STRIKE" class="pitch-btn strike"><b>Strike</b><span>+1 strike</span></button>
       <button data-action="FOUL" class="pitch-btn foul"><b>Foul</b><span>up to 2 strikes</span></button>
     </div>
-    <div class="actions-head hit-head"><div><h3>Ball in play</h3><p>Choose what happened to the batter.</p></div></div>
-    <div class="play-grid">${core.map(([type,label,cls]) => `<button class="play-btn ${cls}" data-result="${type}" ${type === 'SAC_FLY' && !eligibleSac ? 'disabled title="Requires runner on third and fewer than two outs"' : ''}><span>${type === 'HOME_RUN' ? '✦ ' : ''}${label}</span>${icon('arrow',14)}</button>`).join('')}</div>
+    <div class="actions-head hit-head"><div><h3>Ball in play</h3><p>Choose the result, then confirm where each runner ended up.</p></div></div>
+    <div class="play-grid">${core.map(([type,label,cls]) => `<button class="play-btn ${cls}" data-result="${type}" ${(type === 'SAC_FLY' && !eligibleSac) || (type === 'FIELDERS_CHOICE' && ![1,2,3].some(b => v.bases[b])) ? 'disabled' : ''}><span>${type === 'HOME_RUN' ? '✦ ' : ''}${label}</span>${icon('arrow',14)}</button>`).join('')}</div>
     <div class="minor-actions"><button data-action="WALK">Intentional walk</button><button data-action="HBP">Hit by pitch</button></div>
     <button class="advanced-toggle" data-command="toggle-advanced">${showMoreActions ? 'Hide' : 'Show'} runner actions ${icon('chevron',15)}</button>
     ${showMoreActions ? `<div class="advanced-actions">${[1,2,3].map(base => v.bases[base] ? `<div class="runner-control"><span><b>${safe(v.bases[base].name)}</b><small>On ${['','1st','2nd','3rd'][base]}</small></span><button data-advance="${base}" data-kind="STOLEN_BASE">Steal</button><button data-advance="${base}" data-kind="ADVANCE_RUNNER">Advance</button><button data-advance="${base}" data-kind="RUNNER_OUT">Out</button></div>` : '').join('') || '<p class="fineprint">Put a runner on base to enable runner actions.</p>'}</div>` : ''}`;
@@ -126,7 +128,7 @@ function renderScorer(v) {
     <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
       <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
       <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
-      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.1.0</div></div>
+      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.2 preview</div></div>
     </aside>
     <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
       <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Game center<span class="accent-dot">.</span></h1><p>Every play counts. Score it live, your way.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
@@ -141,7 +143,7 @@ function renderScorer(v) {
         <div class="tab-content">${selectedTab === 'plays' ? renderPlayLog(v) : renderStats(v)}</div>
         <div class="timeline-bottom"><div>${icon('info',16)} <span>Game data is saved in this browser only.</span></div><button data-command="export">Export game ${icon('arrow',15)}</button></div>
       </section></div>
-      <div class="footer-note"><span>OpenSideline <b>v0.1</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
+      <div class="footer-note"><span>OpenSideline <b>v0.2 preview</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
     </div></main></div>`;
 }
 function renderSpectator(v) {
@@ -165,14 +167,33 @@ function setupModal() {
     <div><label for="home-name">Home team</label><input id="home-name" name="homeName" maxlength="60" value="${safe(game.teams.home.name)}" required/><label for="home-roster">Home roster</label><textarea id="home-roster" name="homeRoster" rows="10" required>${safe(rosterToText('home'))}</textarea></div></div>
     <p class="warning-text">Saving setup starts a new game and clears the current plays. Export your game first if you want to keep a record.</p><div class="modal-footer"><button type="button" class="btn subtle" data-command="close-setup">Cancel</button><button class="btn primary" type="submit">Start new game ${icon('arrow',16)}</button></div></form></div></div>`;
 }
+const destinations = ['HOLD', 'FIRST', 'SECOND', 'THIRD', 'HOME', 'OUT'];
+const numberedBases = {FIRST:1, SECOND:2, THIRD:3};
+function playModal(v) {
+  const result = showPlay;
+  const suggestion = defaultPlayAdvances(v, result);
+  const runnerInputs = [1,2,3].filter(base => v.bases[base]).map(base => {
+    const key = String(base), value = suggestion.runners[key];
+    const options = destinations.filter(target => target === 'HOLD' || target === 'OUT' || target === 'HOME' || numberedBases[target] > base);
+    return `<div class="play-runner-row"><label for="runner-${base}"><b>${safe(v.bases[base].name)}</b><small>Starting on ${['','first','second','third'][base]}</small></label>
+      <select id="runner-${base}" name="runner-${base}" data-runner-destination="${base}">${options.map(dest => `<option value="${dest}" ${value === dest ? 'selected' : ''}>${dest === 'HOLD' ? 'Stay on base' : dest === 'OUT' ? 'Out on play' : dest === 'HOME' ? 'Scores' : `To ${dest.toLowerCase()} base`}</option>`).join('')}</select>
+      <label class="rbi-choice"><input type="checkbox" name="rbi-${base}" ${suggestion.rbi.includes(key) ? 'checked' : ''} ${value === 'HOME' ? '' : 'disabled'}> Credit RBI</label></div>`;
+  }).join('');
+  return `<div class="modal-backdrop" data-command="close-play"><div class="modal play-modal" role="dialog" aria-modal="true" aria-labelledby="play-title">
+    <div class="modal-head"><div><div class="eyebrow">RECORD BALL IN PLAY</div><h2 id="play-title">${safe(PLAY_RESULTS[result])}</h2><p><b>${safe(v.batter.name)}</b> • Batter: ${suggestion.batter === 'OUT' ? 'out' : suggestion.batter === 'HOME' ? 'home' : `to ${suggestion.batter.toLowerCase()} base`}. Confirm where each existing runner ended up.</p></div><button class="close-button" type="button" data-command="close-play" aria-label="Cancel scoring play">×</button></div>
+    <form id="play-form"><div class="play-runners"><h3>Runner decisions</h3>${runnerInputs || '<p class="fineprint">Bases empty. Only the batter will be recorded.</p>'}</div>
+    <p class="play-warning">Selections start as suggestions only. Verify each runner and whether an RBI is deserved before saving. A run on the third-out play currently requires a scorer judgment we cannot safely record.</p>
+    <div class="modal-footer"><button class="btn subtle" type="button" data-command="close-play">Cancel</button><button class="btn primary" type="submit">Save play</button></div></form>
+  </div></div>`;
+}
 function render() {
   const v = replayGame(game);
   document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
-  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (showPlay && displayMode === 'scorer' ? playModal(v) : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
 }
 function perform(event) {
-  try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); }
-  catch(e) { toast(e.message || 'Could not record this play.'); }
+  try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); return true; }
+  catch(e) { toast(e.message || 'Could not record this play.'); return false; }
 }
 function downloadGame() {
   const json = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
@@ -184,31 +205,57 @@ function downloadGame() {
 app.addEventListener('click', event => {
   const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance]');
   if (!trigger) {
-    if (showSetup && event.target.classList.contains('modal-backdrop')) { showSetup = false; render(); }
+    if (event.target.classList.contains('modal-backdrop')) { showSetup = false; showPlay = null; render(); }
     return;
   }
   if (trigger.disabled) return;
   if (trigger.dataset.action) return perform({type:trigger.dataset.action});
-  if (trigger.dataset.result) return perform({type:'BALL_IN_PLAY',result:trigger.dataset.result});
+  if (trigger.dataset.result) { showPlay = trigger.dataset.result; render(); return; }
   if (trigger.dataset.advance) return perform({type:trigger.dataset.kind,from:Number(trigger.dataset.advance)});
   if (trigger.dataset.tab) { selectedTab=trigger.dataset.tab; render(); return; }
   switch (trigger.dataset.command) {
     case 'undo': if (game.events.length) commit(undoEvent(game)); break;
     case 'export': downloadGame(); break;
-    case 'open-setup': showSetup = true; render(); break;
+    case 'open-setup': showSetup = true; showPlay = null; render(); break;
+    case 'close-play': showPlay = null; render(); break;
     case 'close-setup': showSetup = false; render(); break;
     case 'show-stats': selectedTab = 'stats'; document.querySelector('.timeline-card')?.scrollIntoView({behavior:'smooth'}); render(); break;
     case 'toggle-advanced': showMoreActions = !showMoreActions; render(); break;
   }
 });
+app.addEventListener('change', e => {
+  if (!e.target.matches('[data-runner-destination]')) return;
+  const control = e.target.closest('.play-runner-row')?.querySelector('.rbi-choice input');
+  if (control) {
+    control.disabled = e.target.value !== 'HOME';
+    if (control.disabled) control.checked = false;
+    else if (['SINGLE','DOUBLE','TRIPLE','HOME_RUN','SAC_FLY'].includes(showPlay)) control.checked = true;
+  }
+});
 app.addEventListener('submit', e => {
+  if (e.target.id === 'play-form') {
+    e.preventDefault();
+    const result = showPlay, v = replayGame(game), form = new FormData(e.target);
+    const runners = {}, rbi = [];
+    for (const base of [1,2,3]) {
+      if (!v.bases[base]) continue;
+      const key = String(base);
+      runners[key] = form.get(`runner-${base}`);
+      if (runners[key] === 'HOME' && form.get(`rbi-${base}`) === 'on') rbi.push(key);
+    }
+    const advances = {batter:defaultPlayAdvances(v,result).batter, runners, rbi};
+    const event = {type:'BALL_IN_PLAY',result,advances,at:new Date().toISOString()};
+    try { const next = appendEvent(game, event); showPlay = null; commit(next); }
+    catch (error) { toast(error.message || 'Invalid play. Check the runner destinations.'); }
+    return;
+  }
   if (e.target.id !== 'setup-form') return;
   e.preventDefault();
   if (game.events.length && !confirm('Start a new game? Current plays will be cleared.')) return;
   const form = new FormData(e.target);
   try {
     const next = createGame({ homeName: form.get('homeName'), awayName: form.get('awayName'), homeRoster: parseRoster(form.get('homeRoster'),'home'), awayRoster: parseRoster(form.get('awayRoster'),'away') });
-    showSetup=false; selectedTab='plays'; showMoreActions=false;
+    showSetup=false; showPlay=null; selectedTab='plays'; showMoreActions=false;
     commit(next); toast('New game created. Ready for the first pitch.');
   } catch(e) { toast(e.message); }
 });

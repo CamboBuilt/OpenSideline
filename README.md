@@ -8,7 +8,7 @@ OpenSideline is an early-stage, community-built open-source sports platform. Thi
 
 ## Get it running
 
-**No-install preview:** Open `OpenSideline-Demo.html` in a modern desktop browser. It bundles the same app into one file. Some browsers restrict saving from local files; use `npm start` for reliable browser storage and multiple-tab syncing.
+**No-install preview:** `OpenSideline-Demo.html` remains a **v0.1 snapshot**. To use the new v0.2 runner-decision interface, start the application with `npm start`. Some browsers restrict saving from local files; use `npm start` for reliable browser storage and multiple-tab syncing.
 
 **Requirements:** Node.js 20 or newer. No `npm install` needed.
 
@@ -23,6 +23,10 @@ npm test
 ```
 
 You can also use Python's static server (`python3 -m http.server 5173`) from the repository root and open `http://localhost:5173/apps/web/`.
+
+## v0.2 runner advancement candidate
+
+Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
 ## What works today
 

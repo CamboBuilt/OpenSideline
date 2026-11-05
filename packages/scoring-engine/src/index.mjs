@@ -1,15 +1,18 @@
 /**
- * OpenSideline baseball scoring engine, v0.1.
+ * OpenSideline baseball scoring engine, v0.2 candidate.
  * Immutable game event journal + pure replay. The domain package has no UI dependencies.
  *
  * Scope: standard pitch counts, basic PA outcomes, deterministic one/two/three-base
  * hit advancement, forced walks, simple outs, steals and manual runner movement.
- * Complex scorer's decisions are deliberately excluded until rules are modeled.
+ * v0.2 adds opt-in explicit in-play runner destinations; v0.1 journal events replay unchanged.
  */
-export const ENGINE_VERSION = '0.1.0';
+import { applyExplicitPlay } from './advancement.mjs';
+export { defaultPlayAdvances } from './advancement.mjs';
+export const ENGINE_VERSION = '0.2.0';
 export const PLAY_RESULTS = Object.freeze({
   SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple', HOME_RUN: 'Home run',
   OUT: 'Out in play', ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
+  FIELDERS_CHOICE: "Fielder's choice",
 });
 const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT']);
 const STATS = () => ({ PA: 0, AB: 0, H: 0, R: 0, RBI: 0, BB: 0, SO: 0, HBP: 0, doubles: 0, triples: 0, HR: 0, SF: 0, SB: 0, CS: 0 });
@@ -161,7 +164,21 @@ function process(s, game, event) {
     case 'BALL_IN_PLAY': {
       const result = event.result;
       assert(Object.prototype.hasOwnProperty.call(PLAY_RESULTS, result), 'Unknown ball-in-play result.');
-      if (['SINGLE', 'DOUBLE', 'TRIPLE', 'HOME_RUN'].includes(result)) {
+      if (event.advances !== undefined) {
+        const totals = applyExplicitPlay(s, batter, result, event.advances, addRun);
+        if (['SINGLE', 'DOUBLE', 'TRIPLE', 'HOME_RUN'].includes(result)) {
+          finishPA(s, game, {ab:true, hit:result});
+        } else if (result === 'SAC_FLY') {
+          finishPA(s, game, {sf:true});
+        } else {
+          if (result === 'ERROR') s.errors[defense]++;
+          finishPA(s, game, {ab:true});
+        }
+        label = `${batter.name} • ${PLAY_RESULTS[result]} • ${totals.runs} scored, ${totals.outs} out`;
+        endHalfIfNeeded(s);
+      } else if (result === 'FIELDERS_CHOICE') {
+        throw new Error("Fielder's choice requires explicit runner destinations.");
+      } else if (['SINGLE', 'DOUBLE', 'TRIPLE', 'HOME_RUN'].includes(result)) {
         const bases = { SINGLE: 1, DOUBLE: 2, TRIPLE: 3, HOME_RUN: 4 }[result];
         moveOnHit(s, batter, bases);
         finishPA(s, game, { ab: true, hit: result });
