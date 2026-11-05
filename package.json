@@ -1,0 +1,17 @@
+{
+  "name": "opensideline",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "An open-source, community-built sports platform — baseball scoring MVP",
+  "scripts": {
+    "start": "node scripts/server.mjs",
+    "dev": "node scripts/server.mjs",
+    "test": "node --test packages/scoring-engine/test/*.test.mjs",
+    "check": "npm test && node --check apps/web/src/main.mjs && node --check packages/scoring-engine/src/index.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "Apache-2.0"
+}

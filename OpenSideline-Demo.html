@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#10191c" />
+  <meta name="description" content="OpenSideline — an open-source sports scorekeeping platform." />
+  <title>OpenSideline • Baseball scorer</title>
+  <style>
+:root{color-scheme:dark;--bg:#0b1418;--sidebar:#0e1a1e;--panel:#132127;--panel-2:#172a30;--panel-3:#203339;--border:#294047;--text:#ecf4f4;--muted:#8da6ac;--mint:#5fe3b0;--mint-deep:#1c6b58;--amber:#f1bd71;--red:#f29285;--radius:18px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}button,input,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.32}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--mint);outline-offset:2px}a{text-decoration:none;color:inherit}h1,h2,h3,h4,p{margin:0}h1{letter-spacing:-.055em;font-size:clamp(2rem,3vw,2.8rem);line-height:1.2}h2{letter-spacing:-.03em}h3{letter-spacing:-.02em}.shell{display:flex;min-height:100vh}.sidebar{position:sticky;top:0;align-self:flex-start;width:244px;min-width:244px;height:100vh;background:var(--sidebar);border-right:1px solid #24373b;display:flex;flex-direction:column;padding:29px 15px 24px}.brand{display:flex;align-items:center;gap:11px;font-size:20px;font-weight:850;letter-spacing:-1px;padding:0 9px}.brand>div>span{color:var(--mint)}.brand small{display:block;color:#66858b;font-size:8px;letter-spacing:2px;margin-top:3px;font-weight:850}.brand-logo{width:40px;height:40px;display:flex;justify-content:center;align-items:center;color:var(--mint);background:#173831;border:1px solid #296353;border-radius:12px;flex-shrink:0}.nav-label{color:#57737a;font-size:10px;letter-spacing:1.5px;font-weight:800;margin:53px 13px 13px}.nav-label.resources{margin-top:33px}.sidebar nav{display:grid;gap:7px}.nav-item{height:45px;display:flex;align-items:center;gap:12px;padding:0 13px;color:#8ca6ac;border:none;border-radius:10px;background:none;font-size:13px;font-weight:650;text-align:left;width:100%;white-space:nowrap}.nav-item:hover,.nav-item:focus-visible{background:#192a2f;color:#fff}.nav-item.selected{background:#18382f;color:var(--mint)}.nav-item svg:last-child:not(:first-child){margin-left:auto}.nav-indicator{display:block;margin-left:auto;height:6px;width:6px;background:var(--mint);border-radius:50%}.sidebar-bottom{margin-top:auto;padding:0 13px}.opensource-tag{color:var(--mint);font-size:10px;font-weight:800;letter-spacing:1px;display:flex;gap:8px;align-items:center}.sidebar-version{font-size:11px;margin-top:12px;color:#5a7880}.green-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:0 0 12px #5fe3b066;flex-shrink:0}.main{flex:1;min-width:0}.topbar{height:78px;padding:0 41px;border-bottom:1px solid #22363a;display:flex;justify-content:space-between;align-items:center;gap:14px}.crumb{color:#8da5ac;font-size:10px;font-weight:800;letter-spacing:1.2px}.crumb span{padding:0 8px;color:#54747a}.topbar-actions{display:flex;align-items:center;gap:12px}.live-tag{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;color:var(--mint);border:1px solid #2b5d50;background:#142c27;border-radius:7px;font-size:10px;font-weight:800;letter-spacing:.6px;white-space:nowrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:37px;border-radius:9px;border:1px solid var(--border);background:none;color:var(--text);padding:8px 13px;font-size:12px;font-weight:750;white-space:nowrap}.btn:hover:not(:disabled){background:#234047}.btn.primary{background:var(--mint);color:#09231d;border-color:var(--mint)}.btn.subtle{color:#c0d5d9}.btn.undo{background:#19312e;color:var(--mint);border-color:#2b594d}.content{max-width:1580px;margin:0 auto;padding:34px 40px 38px}.page-heading{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:27px}.eyebrow{font-size:10px;color:var(--mint);font-weight:850;letter-spacing:2px;margin-bottom:8px}.page-heading p{font-size:13px;color:#829da5;margin-top:8px}.accent-dot{color:var(--mint)}.score-panel{border:1px solid #2b454b;background:linear-gradient(116deg,#17282d,#122125 66%);border-radius:var(--radius);overflow:hidden;box-shadow:0 12px 44px #00000012}.score-teams{display:grid;grid-template-columns:1fr 45px 1fr;align-items:center;padding:24px 34px 21px}.team{display:flex;gap:17px;align-items:center;min-width:0}.team-mark{display:flex;align-items:center;justify-content:center;width:56px;height:56px;border:1px solid #3f605f;border-radius:16px;background:#253e40;color:#ecf5f3;font-size:27px;font-weight:900;flex-shrink:0}.home-mark{background:#205141;border-color:#357c60;color:var(--mint)}.team-text{min-width:0;flex:1}.team-sub{font-size:10px;letter-spacing:1.5px;color:#749199;font-weight:800}.team-name{font-size:clamp(13px,1.4vw,19px);font-weight:850;white-space:normal;overflow-wrap:anywhere;margin-top:5px}.score{font-size:clamp(34px,3.5vw,50px);font-weight:870;font-variant-numeric:tabular-nums;letter-spacing:-2px}.team.home .score{color:var(--mint)}.versus{text-align:center;color:#55757a;font-size:10px;font-weight:800;letter-spacing:1px}.game-facts{border-top:1px solid #264046;display:flex;align-items:center;justify-content:center;gap:32px;padding:16px 15px;background:#101e22}.fact-inning{display:flex;gap:11px;align-items:center}.up-down{color:var(--mint);font-size:24px}.game-facts small{color:#74939a;display:block;font-size:9px;font-weight:800;letter-spacing:1.3px}.fact-inning b{font-size:15px}.fact{display:flex;gap:10px;align-items:center}.lights{display:flex;gap:5px}.light{display:block;width:11px;height:11px;border:1px solid #517071;border-radius:50%;background:#263d40}.balls .on{background:var(--mint);border-color:var(--mint)}.strikes .on{background:var(--amber);border-color:var(--amber)}.outs .on{background:var(--red);border-color:var(--red)}.line-scroll{overflow-x:auto;border-top:1px solid #263b42}.linescore{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:12px;text-align:center}.linescore th{font-size:9px;letter-spacing:1px;color:#68868b;font-weight:800;padding:11px 14px;background:#122127}.linescore td{padding:10px 14px;border-top:1px solid #1d343a;color:#adbec1}.linescore th:first-child,.linescore td:first-child{text-align:left;min-width:147px}.linescore td:first-child{font-weight:700;color:#d5e5e6}.linescore .strong{font-size:14px;color:#e4f6f2;font-weight:850}.work-grid{display:grid;grid-template-columns:minmax(0,1.09fr) minmax(350px,0.91fr);gap:19px;margin-top:20px}.card{background:var(--panel);border:1px solid #284047;border-radius:var(--radius);overflow:hidden}.play-card{padding:23px}.card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}.section-label{color:#6b9494;letter-spacing:1.65px;font-size:10px;font-weight:850}.pill{color:var(--mint);border-radius:7px;background:#183d34;padding:7px 11px;font-size:10px;font-weight:800}.batter-block{display:flex;align-items:center;gap:13px;padding:21px 0 11px}.batter-avatar{width:54px;height:54px;border:1px solid #3c625b;border-radius:12px;background:#1c4038;color:var(--mint);font-size:19px;font-weight:900;display:flex;justify-content:center;align-items:center;flex-shrink:0}.batter-title{font-weight:850;font-size:19px;letter-spacing:-.5px}.batter-sub{font-size:12px;color:#859da2;margin-top:5px}.field-wrap{position:relative;min-height:270px;border:1px solid #233e42;border-radius:14px;background:radial-gradient(ellipse at 50% 50%,#173a34,#112b2b 73%);margin-top:8px;display:flex;align-items:center;justify-content:center;overflow:hidden}.field-wrap:before{content:'';position:absolute;width:100%;height:100%;background:repeating-linear-gradient(110deg,transparent,transparent 42px,#ffffff05 45px,transparent 50px);opacity:.6}.field-label{position:absolute;top:15px;left:17px;color:#6eaaaa;font-size:9px;letter-spacing:1.5px;font-weight:850}.diamond{width:174px;height:174px;position:relative;flex-shrink:0}.diamond-large{width:212px;height:212px}.infield{position:absolute;inset:24%;border:2px solid #436e62;transform:rotate(45deg);background:#457f6138}.base{position:absolute;width:16px;height:16px;border:2px solid #aac9b8;background:#24483f;transform:rotate(45deg);z-index:2;border-radius:1px}.base.occupied{background:var(--amber);border-color:#f7d69e;box-shadow:0 0 16px #f1bd7180}.base-2{top:19%;left:calc(50% - 8px)}.base-3{top:calc(50% - 8px);left:19%}.base-1{top:calc(50% - 8px);right:19%}.home-plate{position:absolute;bottom:18%;left:calc(50% - 9px);width:18px;height:18px;background:#d8ebe3;clip-path:polygon(0 0,100% 0,100% 66%,50% 100%,0 66%)}.pitchers-mound{position:absolute;top:calc(50% - 5px);left:calc(50% - 5px);width:10px;height:10px;background:#80ad94;border-radius:50%;box-shadow:0 0 0 9px #6caa7f17}.base-key{position:absolute;bottom:15px;left:17px;font-size:10px;color:#97b6ae;display:flex;gap:8px;align-items:center}.key-dot{width:7px;height:7px;background:var(--amber);border-radius:50%}.control-wrap{padding-top:25px}.actions-head{display:flex;justify-content:space-between}.actions-head h3{font-size:16px}.actions-head p{font-size:11px;color:#829ca2;margin-top:6px}.pitch-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:14px}.pitch-btn{display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;padding:15px 13px;min-height:75px;border-radius:11px;color:var(--text);border:1px solid #39665b;background:#1b4337}.pitch-btn:hover{filter:brightness(1.22);transform:translateY(-1px)}.pitch-btn b{font-size:14px}.pitch-btn span{font-size:10px;color:#87beb0}.pitch-btn.strike{background:#44382d;border-color:#775938}.pitch-btn.strike span{color:#dabb91}.pitch-btn.foul{background:#273e46;border-color:#416573}.pitch-btn.foul span{color:#91b6c3}.hit-head{margin-top:25px}.play-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}.play-btn{border:1px solid #355258;background:#1b3137;border-radius:9px;color:#dbeced;text-align:left;min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:12px;font-weight:750}.play-btn:hover:not(:disabled){background:#26454d}.play-btn.hit{border-color:#3b685a;color:#b8f3d6}.play-btn.homer{background:#284f40;color:var(--mint);border-color:#3a7e61}.play-btn.out{color:#ffc0b5;border-color:#634c50}.play-btn svg{opacity:.5}.minor-actions{display:flex;gap:8px;margin-top:11px}.minor-actions button{background:none;color:#a4bdbe;border:1px solid #304b51;border-radius:8px;padding:10px 11px;font-size:11px;font-weight:700}.minor-actions button:hover{background:#223d44}.advanced-toggle{margin-top:12px;background:none;border:none;color:var(--mint);font-size:12px;font-weight:800;padding:11px 0;display:flex;gap:9px;align-items:center}.advanced-actions{border:1px solid #35525a;border-radius:10px;padding:8px}.runner-control{display:flex;align-items:center;gap:6px;padding:8px 2px}.runner-control+ .runner-control{border-top:1px solid #2f4a4d}.runner-control span{flex:1;min-width:0}.runner-control b{display:block;font-size:11px}.runner-control small{display:block;font-size:10px;color:var(--muted);margin-top:3px}.runner-control button{font-size:10px;color:var(--mint);border:1px solid #355a53;border-radius:6px;background:#173a32;padding:7px}.timeline-card{display:flex;flex-direction:column;min-height:600px}.timeline-header{padding:24px 25px 18px;display:flex;justify-content:space-between;align-items:center}.timeline-header h3{font-size:21px;margin-top:10px}.number-badge{background:#243d43;color:#a1c6c5;border-radius:8px;padding:7px 10px;font-size:12px;font-weight:800}.tabs{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #2b444a}.tabs button{border:none;background:transparent;color:#809da4;font-weight:800;font-size:12px;padding:15px 10px;border-bottom:2px solid transparent}.tabs button.active{color:var(--mint);border-bottom-color:var(--mint)}.tab-content{flex:1;overflow:auto}.events{padding:8px 20px 20px}.event{position:relative;display:flex;gap:14px;align-items:flex-start;padding:18px 0 17px 8px;border-bottom:1px solid #253c42;min-width:0}.event:last-child{border-bottom:0}.event-bullet{position:relative;width:9px;height:9px;background:#38545a;border:2px solid #5c8386;border-radius:50%;margin-top:4px;flex-shrink:0}.event-bullet.latest{background:var(--mint);border-color:var(--mint);box-shadow:0 0 0 5px #5fe3b01c}.event-content{min-width:0;flex:1}.event-meta{font-size:10px;font-weight:800;color:#72979e;letter-spacing:.6px}.event-meta span{padding:0 5px;color:#45676c}.event-label{color:#dce9e9;font-size:13px;font-weight:700;margin-top:6px;line-height:1.4}.event-new{font-size:9px;letter-spacing:.6px;color:var(--mint);font-weight:850}.empty-log{color:#839ca2;padding:34px 24px;font-size:13px;line-height:1.7}.timeline-bottom{display:flex;justify-content:space-between;align-items:center;padding:19px 22px;border-top:1px solid #2b444a;gap:12px;font-size:10px;color:#7c999f}.timeline-bottom>div{display:flex;align-items:center;gap:7px}.timeline-bottom button{display:flex;align-items:center;gap:6px;border:0;background:none;color:var(--mint);font-size:11px;font-weight:800;white-space:nowrap}.footer-note{display:flex;gap:12px;justify-content:space-between;color:#597b81;font-size:10px;padding:27px 0}.footer-note b{color:#95c4b5}.stat-block{padding:19px 16px 5px}.stat-block h4{font-size:13px;margin-bottom:12px}.table-overflow{overflow:auto}.player-stats{border-collapse:collapse;width:100%;font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}.player-stats td,.player-stats th{padding:10px 7px;border-bottom:1px solid #294148;text-align:right}.player-stats td:first-child,.player-stats th:first-child{text-align:left}.player-stats th{color:#6f979d;font-size:9px;letter-spacing:.6px}.player-stats td{color:#d5e5e5}.jersey{font-size:10px;color:var(--mint);margin-right:3px}.fineprint{font-size:11px;color:#77959b;line-height:1.7;padding:13px 18px 20px}.modal-backdrop{position:fixed;inset:0;background:#051014dc;display:flex;align-items:center;justify-content:center;padding:24px;z-index:100;overflow:auto}.modal{background:#15272c;border:1px solid #3d636a;border-radius:17px;width:min(800px,100%);padding:27px;box-shadow:0 25px 100px #0008;max-height:calc(100vh - 48px);overflow:auto}.modal-head{display:flex;justify-content:space-between;gap:12px}.modal-head h2{font-size:28px}.modal-head p{margin-top:9px;font-size:12px;color:#91acb0;line-height:1.5}.close-button{width:34px;height:34px;display:flex;justify-content:center;align-items:center;font-size:25px;color:var(--text);background:#223f44;border:1px solid #39585d;border-radius:8px}.setup-columns{display:grid;grid-template-columns:1fr 1fr;gap:19px;margin-top:26px}.setup-columns label{display:block;font-size:11px;font-weight:800;letter-spacing:.7px;margin:10px 0 8px;color:#a5c0bd}.setup-columns input,.setup-columns textarea{display:block;width:100%;border:1px solid #3a6268;background:#0e1c21;color:#f0f7f7;border-radius:9px;padding:11px 12px;font-size:13px}.setup-columns textarea{resize:vertical;line-height:1.65;min-height:170px}.warning-text{font-size:11px;color:var(--amber);line-height:1.5;margin-top:19px}.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:17px}.toast{position:fixed;right:22px;bottom:20px;z-index:120;border:1px solid #327967;background:#193b35;color:#ccf6e5;border-radius:10px;padding:13px 18px;font-size:13px;box-shadow:0 14px 40px #0005;max-width:350px}.spectator-mode{max-width:980px;padding:30px 24px;margin:auto}.spectator-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}.brand.compact{padding:0}.spectator-mode .score-panel{margin-bottom:20px}.spectator-base,.spectator-updates{border:1px solid #2b444a;background:var(--panel);border-radius:16px;padding:22px;margin-bottom:17px}.spectator-grid{display:flex;align-items:center;justify-content:center;gap:12%;min-height:210px}.batter-now small{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#79a49f}.batter-now h2{font-size:30px;margin:9px 0 3px}.batter-now span{font-size:12px;color:#9eafb3}.batter-now p{font-size:15px;font-weight:800;margin-top:25px;color:var(--mint)}.spectator-updates h3{font-size:18px}.spectator-updates .events{padding:4px 0}.spectator-footer{color:#72939a;font-size:11px;text-align:center;margin-top:20px}.overlay-mode{background:transparent;padding:12px;max-width:950px}.overlay-mode .score-panel{border:1px solid #45676d;background:#10191cf2}.overlay-mode .score-teams{padding:13px 24px}.overlay-mode .score-teams .team-mark{width:45px;height:45px;font-size:22px}.overlay-mode .game-facts{padding:10px}.overlay-mode .spectator-head{display:none}.overlay-mode .spectator-footer{font-size:10px;text-align:left;margin:4px 2px}.tag.muted{font-size:11px;color:#90aaaa}
+@media(max-width:1180px){.sidebar{width:203px;min-width:203px}.content{padding:28px}.topbar{padding:0 28px}.work-grid{grid-template-columns:1fr 1fr}.score-teams{padding:20px}.team{gap:10px}.team-mark{width:47px;height:47px}.team-name{font-size:15px}.pitch-btn{padding:12px 9px}}
+@media(max-width:950px){.sidebar{display:none}.content{padding:25px 20px}.topbar{padding:0 20px}.work-grid{grid-template-columns:1fr}.timeline-card{min-height:360px}.play-card{max-width:none}.field-wrap{min-height:250px}.footer-note{flex-wrap:wrap}}
+@media(max-width:600px){.topbar{height:64px;padding:0 14px}.topbar .btn.subtle{padding:7px 8px;font-size:0;gap:0}.topbar .btn.subtle svg{width:18px;height:18px}.topbar-actions{gap:6px}.crumb{font-size:9px}.live-tag{font-size:9px;padding:7px}.content{padding:20px 12px}.page-heading{align-items:start}.page-heading .undo{font-size:0;gap:0;min-width:38px;min-height:38px;padding:9px}.page-heading .undo svg{width:18px;height:18px}.page-heading h1{font-size:33px}.page-heading p{font-size:12px}.score-teams{padding:16px 11px;grid-template-columns:minmax(0,1fr) 23px minmax(0,1fr)}.team{display:grid;grid-template-columns:33px minmax(0,1fr);gap:6px}.team-mark{width:32px;height:32px;border-radius:9px;font-size:17px}.team-text{align-self:center}.team-sub{font-size:8px}.team-name{font-size:12px}.score{grid-column:1/3;font-size:35px;margin-left:5px}.versus{font-size:8px}.game-facts{gap:13px;padding:14px 8px;justify-content:space-around}.fact{display:flex;flex-direction:column;gap:5px}.fact-inning{gap:4px}.fact-inning b{font-size:12px}.up-down{font-size:16px}.light{width:8px;height:8px}.linescore td,.linescore th{padding:10px 9px}.linescore th:first-child,.linescore td:first-child{min-width:108px}.work-grid{gap:13px;margin-top:13px}.play-card{padding:17px}.pitch-buttons{gap:7px}.pitch-btn{min-height:72px}.pitch-btn b{font-size:13px}.play-grid{gap:7px}.play-btn{font-size:12px;padding:0 10px}.field-wrap{min-height:248px}.timeline-header{padding:19px}.setup-columns{grid-template-columns:1fr}.modal{padding:18px}.modal-backdrop{padding:8px}.modal-head h2{font-size:22px}.spectator-mode{padding:16px 9px}.spectator-grid{gap:4%}.batter-now h2{font-size:19px}.spectator-grid .diamond-large{width:176px;height:176px}.spectator-base{padding:14px}.spectator-updates{padding:15px}.overlay-mode .score-teams{padding:10px}.overlay-mode .game-facts{gap:9px}}
+
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+/**
+ * OpenSideline baseball scoring engine, v0.1.
+ * Immutable game event journal + pure replay. The domain package has no UI dependencies.
+ *
+ * Scope: standard pitch counts, basic PA outcomes, deterministic one/two/three-base
+ * hit advancement, forced walks, simple outs, steals and manual runner movement.
+ * Complex scorer's decisions are deliberately excluded until rules are modeled.
+ */
+export const ENGINE_VERSION = '0.1.0';
+export const PLAY_RESULTS = Object.freeze({
+  SINGLE: 'Single', DOUBLE: 'Double', TRIPLE: 'Triple', HOME_RUN: 'Home run',
+  OUT: 'Out in play', ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
+});
+const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT']);
+const STATS = () => ({ PA: 0, AB: 0, H: 0, R: 0, RBI: 0, BB: 0, SO: 0, HBP: 0, doubles: 0, triples: 0, HR: 0, SF: 0, SB: 0, CS: 0 });
+const assert = (condition, text) => { if (!condition) throw new Error(text); };
+const sanitize = (str, max = 50) => String(str ?? '').trim().slice(0, max);
+const defaultRoster = (prefix) => Array.from({ length: 9 }, (_, i) => ({ id: `${prefix}-${i + 1}`, number: String(i + 1), name: `Player ${i + 1}` }));
+
+function validateRoster(roster, prefix) {
+  assert(Array.isArray(roster) && roster.length >= 1 && roster.length <= 30, 'Each roster needs 1–30 players.');
+  const ids = new Set();
+  return roster.map((p, i) => {
+    const name = sanitize(p?.name, 60);
+    assert(name.length > 0, `Player ${i + 1} needs a name.`);
+    const id = sanitize(p?.id || `${prefix}-${i + 1}`, 80);
+    assert(!ids.has(id), 'Each player needs a unique ID on their team.');
+    ids.add(id);
+    return { id, number: sanitize(p?.number, 5), name };
+  });
+}
+
+export function createGame({ homeName = 'Home Hawks', awayName = 'Visiting Tigers', homeRoster, awayRoster } = {}) {
+  const nameHome = sanitize(homeName, 60), nameAway = sanitize(awayName, 60);
+  assert(nameHome && nameAway, 'Both teams need names.');
+  return {
+    schemaVersion: 1, engineVersion: ENGINE_VERSION,
+    id: `game-${Date.now().toString(36)}`,
+    createdAt: new Date().toISOString(),
+    teams: {
+      home: { name: nameHome, roster: validateRoster(homeRoster ?? defaultRoster('home'), 'home') },
+      away: { name: nameAway, roster: validateRoster(awayRoster ?? defaultRoster('away'), 'away') },
+    },
+    events: [],
+  };
+}
+
+function freshView(game) {
+  return {
+    inning: 1, half: 'top', outs: 0, balls: 0, strikes: 0,
+    bases: { 1: null, 2: null, 3: null },
+    scores: { home: 0, away: 0 }, hits: { home: 0, away: 0 }, errors: { home: 0, away: 0 },
+    lineScore: { home: {}, away: {} },
+    battingIndex: { home: 0, away: 0 },
+    playerStats: {
+      home: Object.fromEntries(game.teams.home.roster.map(p => [p.id, STATS()])),
+      away: Object.fromEntries(game.teams.away.roster.map(p => [p.id, STATS()])),
+    },
+    playLog: [], eventCount: 0,
+  };
+}
+const battingSide = (s) => s.half === 'top' ? 'away' : 'home';
+const fieldingSide = (s) => s.half === 'top' ? 'home' : 'away';
+const batterOf = (s, game) => {
+  const side = battingSide(s), roster = game.teams[side].roster;
+  return roster[s.battingIndex[side] % roster.length];
+};
+function addRun(s, runner, rbiBatter = null) {
+  const side = battingSide(s);
+  s.scores[side] += 1;
+  s.lineScore[side][s.inning] = (s.lineScore[side][s.inning] ?? 0) + 1;
+  s.playerStats[side][runner.id].R += 1;
+  if (rbiBatter) s.playerStats[side][rbiBatter.id].RBI += 1;
+}
+function finishPA(s, game, { hit = null, ab = false, walk = false, strikeout = false, hbp = false, sf = false } = {}) {
+  const side = battingSide(s), batter = batterOf(s, game), st = s.playerStats[side][batter.id];
+  st.PA++; if (ab) st.AB++; if (walk) st.BB++; if (strikeout) st.SO++;
+  if (hbp) st.HBP++; if (sf) st.SF++;
+  if (hit) {
+    st.H++; s.hits[side]++;
+    if (hit === 'DOUBLE') st.doubles++;
+    if (hit === 'TRIPLE') st.triples++;
+    if (hit === 'HOME_RUN') st.HR++;
+  }
+  s.battingIndex[side]++;
+  s.balls = 0; s.strikes = 0;
+}
+function endHalfIfNeeded(s) {
+  if (s.outs !== 3) return false;
+  s.outs = 0; s.balls = 0; s.strikes = 0;
+  s.bases = { 1: null, 2: null, 3: null };
+  if (s.half === 'top') s.half = 'bottom';
+  else { s.half = 'top'; s.inning++; }
+  return true;
+}
+function forceFirst(s, batter, grantRbi) {
+  const b1 = s.bases[1], b2 = s.bases[2], b3 = s.bases[3];
+  if (b1 && b2 && b3) addRun(s, b3, grantRbi ? batter : null);
+  if (b1 && b2) s.bases[3] = b2;
+  if (b1) s.bases[2] = b1;
+  s.bases[1] = batter;
+}
+function moveOnHit(s, batter, bases) {
+  const existing = { ...s.bases }, next = { 1: null, 2: null, 3: null };
+  for (let from = 3; from >= 1; from--) {
+    const runner = existing[from];
+    if (!runner) continue;
+    const to = from + bases;
+    if (to >= 4) addRun(s, runner, batter);
+    else next[to] = runner;
+  }
+  if (bases === 4) addRun(s, batter, batter);
+  else next[bases] = batter;
+  s.bases = next;
+}
+function addLog(s, event, label, prior, game) {
+  s.playLog.push({
+    index: s.eventCount + 1, at: event.at || '',
+    inning: prior.inning, half: prior.half,
+    offense: prior.half === 'top' ? game.teams.away.name : game.teams.home.name,
+    label,
+  });
+}
+function process(s, game, event) {
+  assert(event && EVENT_TYPES.has(event.type), 'Unknown scoring action.');
+  const prev = { inning: s.inning, half: s.half };
+  const batter = batterOf(s, game);
+  const team = battingSide(s), defense = fieldingSide(s);
+  let label = '';
+  switch (event.type) {
+    case 'BALL':
+      s.balls++;
+      if (s.balls === 4) {
+        forceFirst(s, batter, true);
+        finishPA(s, game, { walk: true });
+        label = `${batter.name} walks (four balls)`;
+      } else label = `Ball • ${s.balls}-${s.strikes}`;
+      break;
+    case 'STRIKE':
+      s.strikes++;
+      if (s.strikes === 3) {
+        finishPA(s, game, { ab: true, strikeout: true });
+        s.outs++; label = `${batter.name} strikes out`;
+        endHalfIfNeeded(s);
+      } else label = `Strike • ${s.balls}-${s.strikes}`;
+      break;
+    case 'FOUL':
+      if (s.strikes < 2) s.strikes++;
+      label = `Foul • ${s.balls}-${s.strikes}`;
+      break;
+    case 'WALK':
+      forceFirst(s, batter, true);
+      finishPA(s, game, { walk: true });
+      label = `${batter.name} walks`;
+      break;
+    case 'HBP':
+      forceFirst(s, batter, true);
+      finishPA(s, game, { hbp: true });
+      label = `${batter.name} hit by pitch`;
+      break;
+    case 'BALL_IN_PLAY': {
+      const result = event.result;
+      assert(Object.prototype.hasOwnProperty.call(PLAY_RESULTS, result), 'Unknown ball-in-play result.');
+      if (['SINGLE', 'DOUBLE', 'TRIPLE', 'HOME_RUN'].includes(result)) {
+        const bases = { SINGLE: 1, DOUBLE: 2, TRIPLE: 3, HOME_RUN: 4 }[result];
+        moveOnHit(s, batter, bases);
+        finishPA(s, game, { ab: true, hit: result });
+        label = `${batter.name} • ${PLAY_RESULTS[result]}`;
+      } else if (result === 'ERROR') {
+        forceFirst(s, batter, false);
+        s.errors[defense]++;
+        finishPA(s, game, { ab: true });
+        label = `${batter.name} reaches on error`;
+      } else if (result === 'SAC_FLY') {
+        assert(s.outs < 2, 'A sacrifice fly requires fewer than two outs.');
+        assert(s.bases[3], 'A sacrifice fly requires a runner on third.');
+        addRun(s, s.bases[3], batter); s.bases[3] = null;
+        finishPA(s, game, { sf: true });
+        s.outs++; label = `${batter.name} • sacrifice fly (1 RBI)`;
+        endHalfIfNeeded(s);
+      } else {
+        finishPA(s, game, { ab: true });
+        s.outs++; label = `${batter.name} • out in play`;
+        endHalfIfNeeded(s);
+      }
+      break;
+    }
+    case 'STOLEN_BASE':
+    case 'ADVANCE_RUNNER': {
+      const from = Number(event.from);
+      assert([1, 2, 3].includes(from), 'Choose a valid occupied base.');
+      assert(s.bases[from], 'No runner on that base.');
+      const runner = s.bases[from];
+      const to = from + 1;
+      assert(to === 4 || !s.bases[to], 'Next base is already occupied.');
+      s.bases[from] = null;
+      if (to === 4) addRun(s, runner);
+      else s.bases[to] = runner;
+      if (event.type === 'STOLEN_BASE') s.playerStats[team][runner.id].SB++;
+      label = `${runner.name} ${event.type === 'STOLEN_BASE' ? 'steals' : 'advances to'} ${to === 4 ? 'home' : `${['', 'first', 'second', 'third'][to]} base`}`;
+      break;
+    }
+    case 'RUNNER_OUT': {
+      const from = Number(event.from);
+      assert([1, 2, 3].includes(from) && s.bases[from], 'Choose an occupied base.');
+      const runner = s.bases[from];
+      s.bases[from] = null; s.outs++;
+      if (event.caughtStealing) s.playerStats[team][runner.id].CS++;
+      label = `${runner.name} out on bases${event.caughtStealing ? ' (caught stealing)' : ''}`;
+      endHalfIfNeeded(s);
+      break;
+    }
+  }
+  addLog(s, event, label, prev, game);
+  s.eventCount++;
+  return s;
+}
+
+export function replayGame(game) {
+  assert(game && game.schemaVersion === 1 && game.teams && Array.isArray(game.events), 'Invalid or unsupported game file.');
+  // Incomplete/invalid external data must not be trusted simply because it parses as JSON.
+  const validated = {
+    teams: {
+      home: { name: sanitize(game.teams.home?.name, 60), roster: validateRoster(game.teams.home?.roster, 'home') },
+      away: { name: sanitize(game.teams.away?.name, 60), roster: validateRoster(game.teams.away?.roster, 'away') },
+    },
+  };
+  assert(game.events.length <= 10000, 'Game has too many events.');
+  const state = freshView(validated);
+  for (const event of game.events) process(state, validated, event);
+  state.batter = batterOf(state, validated);
+  state.batting = battingSide(state);
+  state.fielding = fieldingSide(state);
+  return state;
+}
+export function appendEvent(game, event) {
+  const next = { ...game, events: [...game.events, { ...event }] };
+  replayGame(next); // validation before accepting the new event
+  return next;
+}
+export function undoEvent(game) {
+  return { ...game, events: game.events.slice(0, -1) };
+}
+export function formatAvg(h, ab) { return ab ? (h / ab).toFixed(3).replace(/^0/, '') : '.000'; }
+export function formatObp(st) {
+  const denominator = st.AB + st.BB + st.HBP + st.SF;
+  return denominator ? ((st.H + st.BB + st.HBP) / denominator).toFixed(3).replace(/^0/, '') : '.000';
+}
+export function formatSlg(st) {
+  return st.AB ? ((st.H + st.doubles + 2 * st.triples + 3 * st.HR) / st.AB).toFixed(3).replace(/^0/, '') : '.000';
+}
+
+
+const STORAGE_KEY = 'opensideline:baseball:v1';
+const app = document.querySelector('#app');
+const TAB_ID = Math.random().toString(36).slice(2);
+const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('opensideline-baseball-v1') : null;
+const query = new URLSearchParams(location.search);
+const displayMode = ['spectator', 'overlay'].includes(query.get('view')) ? query.get('view') : 'scorer';
+let game = readStoredGame();
+let selectedTab = 'plays';
+let showSetup = false;
+let feedback = '';
+let showMoreActions = false;
+let noticeTimer = null;
+
+function readStoredGame() {
+  try {
+    const found = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (found) { replayGame(found); return found; }
+  } catch { /* Corrupt saved games are ignored in favor of a fresh demo. */ }
+  return createGame();
+}
+function commit(next) {
+  game = next;
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(game)); }
+  catch { /* The page remains usable in private or restricted storage modes. */ }
+  channel?.postMessage({ from: TAB_ID, game });
+  render();
+}
+function toast(text) {
+  feedback = text;
+  clearTimeout(noticeTimer);
+  render();
+  noticeTimer = setTimeout(() => { feedback = ''; render(); }, 3500);
+}
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+const safe = escapeHtml;
+function icon(name, size = 18) {
+  const paths = {
+    baseball: '<circle cx="12" cy="12" r="9"/><path d="M5.7 5.7c3.1 3.5 3.1 9.1 0 12.6M18.3 5.7c-3.1 3.5-3.1 9.1 0 12.6M6.9 8l2 1.2m-2 2.4 2.1 1m6-3.5 2-1.2m-2 4.8 2.1-1"/>',
+    grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    people: '<path d="M16 20v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 20v-2a4 4 0 0 0-3-3.9M16 2.1a4 4 0 0 1 0 7.8"/>',
+    stats: '<path d="M3 3v18h18M7 16v-5m5 5V7m5 9V5"/>',
+    settings: '<path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM19.4 15l1.5 1.1-2 3.4-1.8-.7a8 8 0 0 1-1.6.9l-.3 1.9h-4l-.3-1.9a8 8 0 0 1-1.6-.9l-1.8.7-2-3.4L7 15a7 7 0 0 1 0-2l-1.5-1.1 2-3.4 1.8.7a8 8 0 0 1 1.6-.9l.3-1.9h4l.3 1.9a8 8 0 0 1 1.6.9l1.8-.7 2 3.4-1.5 1.1a7 7 0 0 1 0 2Z"/>',
+    share: '<path d="M12 16V3m0 0L7 8m5-5 5 5M4 14v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6"/>',
+    undo: '<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-2"/>',
+    arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
+    new: '<path d="M12 5v14M5 12h14"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/>',
+    chevron: '<path d="m6 9 6 6 6-6"/>',
+    external: '<path d="M14 4h6v6M20 4l-9 9M20 14v6H4V4h6"/>',
+    radio: '<circle cx="12" cy="12" r="2"/><path d="M7 7a7 7 0 0 0 0 10m10-10a7 7 0 0 1 0 10M4 4a11 11 0 0 0 0 16m16-16a11 11 0 0 1 0 16"/>',
+  };
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.grid}</svg>`;
+}
+const titleCase = word => word === 'top' ? 'TOP' : 'BOT';
+function getCounts(n, maximum) { return Array.from({length: maximum}, (_, i) => `<span class="light ${i < n ? 'on' : ''}"></span>`).join(''); }
+function renderBases(view, large = false) {
+  return `<div class="diamond ${large ? 'diamond-large' : ''}" aria-label="Bases: ${[1,2,3].filter(n => view.bases[n]).map(n => `${n}${n===1?'st':n===2?'nd':'rd'} occupied`).join(', ') || 'empty'}">
+    <div class="infield"></div>
+    <div class="base base-2 ${view.bases[2] ? 'occupied' : ''}" title="Second base: ${safe(view.bases[2]?.name || 'empty')}"></div>
+    <div class="base base-3 ${view.bases[3] ? 'occupied' : ''}" title="Third base: ${safe(view.bases[3]?.name || 'empty')}"></div>
+    <div class="base base-1 ${view.bases[1] ? 'occupied' : ''}" title="First base: ${safe(view.bases[1]?.name || 'empty')}"></div>
+    <div class="home-plate"></div>
+    <span class="pitchers-mound"></span>
+  </div>`;
+}
+function lineScore(v) {
+  const innings = Array.from({ length: Math.max(v.inning, 3) }, (_, i) => i + 1);
+  const cells = (side) => innings.map(i => {
+    const isFuture = i > v.inning || (i === v.inning && side === 'home' && v.half === 'top');
+    return `<td>${isFuture && !v.lineScore[side][i] ? '–' : (v.lineScore[side][i] ?? 0)}</td>`;
+  }).join('');
+  return `<div class="line-scroll"><table class="linescore"><thead><tr><th>TEAM</th>${innings.map(i => `<th>${i}</th>`).join('')}<th>R</th><th>H</th><th>E</th></tr></thead>
+    <tbody><tr><td>${safe(game.teams.away.name)}</td>${cells('away')}<td class="strong">${v.scores.away}</td><td>${v.hits.away}</td><td>${v.errors.away}</td></tr>
+    <tr><td>${safe(game.teams.home.name)}</td>${cells('home')}<td class="strong">${v.scores.home}</td><td>${v.hits.home}</td><td>${v.errors.home}</td></tr></tbody></table></div>`;
+}
+function scoreHeader(v, compact = false) {
+  return `<section class="score-panel ${compact ? 'score-compact' : ''}">
+    <div class="score-teams">
+      <div class="team away"><div class="team-mark away-mark">${safe(game.teams.away.name[0] || 'A')}</div><div class="team-text"><div class="team-sub">AWAY</div><div class="team-name">${safe(game.teams.away.name)}</div></div><div class="score">${v.scores.away}</div></div>
+      <div class="versus"><span>VS</span></div>
+      <div class="team home"><div class="team-mark home-mark">${safe(game.teams.home.name[0] || 'H')}</div><div class="team-text"><div class="team-sub">HOME</div><div class="team-name">${safe(game.teams.home.name)}</div></div><div class="score">${v.scores.home}</div></div>
+    </div>
+    <div class="game-facts"><div class="fact-inning"><span class="up-down">${v.half === 'top' ? '▲' : '▼'}</span><div><small>INNING</small><b>${titleCase(v.half)} ${v.inning}</b></div></div>
+      <div class="fact"><small>BALLS</small><span class="lights balls">${getCounts(v.balls,3)}</span></div>
+      <div class="fact"><small>STRIKES</small><span class="lights strikes">${getCounts(v.strikes,2)}</span></div>
+      <div class="fact"><small>OUTS</small><span class="lights outs">${getCounts(v.outs,2)}</span></div></div>
+    ${compact ? '' : lineScore(v)}
+  </section>`;
+}
+function renderPlayLog(v) {
+  const logs = v.playLog.slice(-12).reverse();
+  return logs.length ? `<div class="events">${logs.map((row,i) => `<div class="event"><div class="event-bullet ${i === 0 ? 'latest' : ''}"></div><div class="event-content"><div class="event-meta">${row.half === 'top' ? 'TOP' : 'BOT'} ${row.inning} <span>·</span> ${safe(row.offense)}</div><div class="event-label">${safe(row.label)}</div></div>${i === 0 ? '<span class="event-new">LATEST</span>' : ''}</div>`).join('')}</div>` : '<div class="empty-log">No plays yet. Record the first pitch to start the game.</div>';
+}
+function renderStats(v) {
+  const statsFor = (side) => `<section class="stat-block"><h4>${safe(game.teams[side].name)}</h4><div class="table-overflow"><table class="player-stats"><thead><tr><th>PLAYER</th><th>AB</th><th>H</th><th>R</th><th>RBI</th><th>BB</th><th>AVG</th><th>OBP</th></tr></thead><tbody>${game.teams[side].roster.map(p => {
+    const s = v.playerStats[side][p.id];
+    return `<tr><td><span class="jersey">${safe(p.number || '–')}</span> ${safe(p.name)}</td><td>${s.AB}</td><td>${s.H}</td><td>${s.R}</td><td>${s.RBI}</td><td>${s.BB}</td><td>${formatAvg(s.H,s.AB)}</td><td>${formatObp(s)}</td></tr>`;
+  }).join('')}</tbody></table></div></section>`;
+  return `${statsFor('away')}${statsFor('home')}<p class="fineprint">Automated stats use simplified advancement rules. OBP includes hits, walks and HBP. Advanced scorer judgments, substitutions and pitching stats are not yet implemented.</p>`;
+}
+function playActions(v) {
+  const eligibleSac = v.outs < 2 && Boolean(v.bases[3]);
+  const core = [
+    ['SINGLE', 'Single', 'hit'], ['DOUBLE','Double','hit'], ['TRIPLE','Triple','hit'], ['HOME_RUN','Home run','homer'],
+    ['OUT','Out','out'], ['ERROR','Error','neutral'], ['SAC_FLY','Sac fly','neutral'],
+  ];
+  return `<div class="actions-head"><div><h3>Record a pitch</h3><p>Tap a pitch result to update the count.</p></div></div>
+    <div class="pitch-buttons">
+      <button data-action="BALL" class="pitch-btn ball"><b>Ball</b><span>+1 ball</span></button>
+      <button data-action="STRIKE" class="pitch-btn strike"><b>Strike</b><span>+1 strike</span></button>
+      <button data-action="FOUL" class="pitch-btn foul"><b>Foul</b><span>up to 2 strikes</span></button>
+    </div>
+    <div class="actions-head hit-head"><div><h3>Ball in play</h3><p>Choose what happened to the batter.</p></div></div>
+    <div class="play-grid">${core.map(([type,label,cls]) => `<button class="play-btn ${cls}" data-result="${type}" ${type === 'SAC_FLY' && !eligibleSac ? 'disabled title="Requires runner on third and fewer than two outs"' : ''}><span>${type === 'HOME_RUN' ? '✦ ' : ''}${label}</span>${icon('arrow',14)}</button>`).join('')}</div>
+    <div class="minor-actions"><button data-action="WALK">Intentional walk</button><button data-action="HBP">Hit by pitch</button></div>
+    <button class="advanced-toggle" data-command="toggle-advanced">${showMoreActions ? 'Hide' : 'Show'} runner actions ${icon('chevron',15)}</button>
+    ${showMoreActions ? `<div class="advanced-actions">${[1,2,3].map(base => v.bases[base] ? `<div class="runner-control"><span><b>${safe(v.bases[base].name)}</b><small>On ${['','1st','2nd','3rd'][base]}</small></span><button data-advance="${base}" data-kind="STOLEN_BASE">Steal</button><button data-advance="${base}" data-kind="ADVANCE_RUNNER">Advance</button><button data-advance="${base}" data-kind="RUNNER_OUT">Out</button></div>` : '').join('') || '<p class="fineprint">Put a runner on base to enable runner actions.</p>'}</div>` : ''}`;
+}
+function renderScorer(v) {
+  const batter = v.batter;
+  return `<div class="shell">
+    <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
+      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
+      <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
+      <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.1.0</div></div>
+    </aside>
+    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
+      <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Game center<span class="accent-dot">.</span></h1><p>Every play counts. Score it live, your way.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
+      ${scoreHeader(v)}
+      <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><span class="pill">${safe(game.teams[v.batting].name)}</span></div>
+        <div class="batter-block"><div class="batter-avatar">${safe(batter.number || '—')}</div><div><div class="batter-title">${safe(batter.name)}</div><div class="batter-sub">${safe(game.teams[v.batting].name)} · Batting #${(v.battingIndex[v.batting] % game.teams[v.batting].roster.length) + 1}</div></div></div>
+        <div class="field-wrap"><div class="field-label">ON THE BASES</div>${renderBases(v,true)}<div class="base-key"><span class="key-dot"></span> Occupied base</div></div>
+        <div class="control-wrap">${playActions(v)}</div>
+      </section>
+      <section class="card timeline-card"><div class="timeline-header"><div><div class="section-label">GAME DETAILS</div><h3>Follow the action</h3></div><span class="number-badge">${game.events.length}</span></div>
+        <div class="tabs"><button class="${selectedTab === 'plays' ? 'active' : ''}" data-tab="plays">Play-by-play</button><button class="${selectedTab === 'stats' ? 'active' : ''}" data-tab="stats">Box score</button></div>
+        <div class="tab-content">${selectedTab === 'plays' ? renderPlayLog(v) : renderStats(v)}</div>
+        <div class="timeline-bottom"><div>${icon('info',16)} <span>Game data is saved in this browser only.</span></div><button data-command="export">Export game ${icon('arrow',15)}</button></div>
+      </section></div>
+      <div class="footer-note"><span>OpenSideline <b>v0.1</b> — Community-built sports technology</span><span>Prototype · Not a certified official scorebook</span></div>
+    </div></main></div>`;
+}
+function renderSpectator(v) {
+  const overlay = displayMode === 'overlay';
+  return `<div class="${overlay ? 'overlay-mode' : 'spectator-mode'}"><div class="spectator-head"><div class="brand compact"><span class="brand-logo">${icon('baseball',25)}</span><div>Open<span>Sideline</span></div></div>${overlay ? '<span class="tag muted">OBS DEMO</span>' : '<span class="live-tag"><span class="green-dot"></span> LOCAL LIVE VIEW</span>'}</div>
+  ${scoreHeader(v,true)}${overlay ? '' : `<section class="spectator-base"><div class="section-label">CURRENT SITUATION</div><div class="spectator-grid">${renderBases(v,true)}<div class="batter-now"><small>AT BAT</small><h2>${safe(v.batter.name)}</h2><span>${safe(game.teams[v.batting].name)}</span><p>${v.outs} out${v.outs === 1 ? '' : 's'} · ${v.balls}-${v.strikes} count</p></div></div></section><div class="spectator-updates"><h3>Recent plays</h3>${renderPlayLog(v)}</div>`}
+  <div class="spectator-footer">${overlay ? 'Preview only — syncs across tabs in the same browser profile.' : 'OpenSideline prototype • Local-tab synchronization only; not an internet broadcast.'}</div>
+  </div>`;
+}
+function parseRoster(raw, prefix) {
+  const entries = String(raw).split('\n').map(x=>x.trim()).filter(Boolean);
+  return entries.map((line,i) => {
+    const m = line.match(/^#?(\d{1,3})\s*[-:.]?\s+(.+)$/);
+    return { id: `${prefix}-${i+1}`, number: m ? m[1] : String(i+1), name: m ? m[2].trim() : line };
+  });
+}
+function rosterToText(side) { return game.teams[side].roster.map(p => `#${p.number} ${p.name}`).join('\n'); }
+function setupModal() {
+  return `<div class="modal-backdrop" data-command="close-setup"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="setup-title"><div class="modal-head"><div><div class="eyebrow">GAME SETTINGS</div><h2 id="setup-title">Set up a game</h2><p>Enter players in batting order. One player per line: <b>#12 Jordan Smith</b>.</p></div><button data-command="close-setup" class="close-button" aria-label="Close setup">×</button></div>
+    <form id="setup-form"><div class="setup-columns"><div><label for="away-name">Away team</label><input id="away-name" name="awayName" maxlength="60" value="${safe(game.teams.away.name)}" required/><label for="away-roster">Away roster</label><textarea id="away-roster" name="awayRoster" rows="10" required>${safe(rosterToText('away'))}</textarea></div>
+    <div><label for="home-name">Home team</label><input id="home-name" name="homeName" maxlength="60" value="${safe(game.teams.home.name)}" required/><label for="home-roster">Home roster</label><textarea id="home-roster" name="homeRoster" rows="10" required>${safe(rosterToText('home'))}</textarea></div></div>
+    <p class="warning-text">Saving setup starts a new game and clears the current plays. Export your game first if you want to keep a record.</p><div class="modal-footer"><button type="button" class="btn subtle" data-command="close-setup">Cancel</button><button class="btn primary" type="submit">Start new game ${icon('arrow',16)}</button></div></form></div></div>`;
+}
+function render() {
+  const v = replayGame(game);
+  document.title = `OpenSideline | ${game.teams.away.name} ${v.scores.away}–${v.scores.home} ${game.teams.home.name}`;
+  app.innerHTML = (displayMode === 'scorer' ? renderScorer(v) : renderSpectator(v)) + (showSetup && displayMode === 'scorer' ? setupModal() : '') + (feedback ? `<div class="toast" role="status">${safe(feedback)}</div>` : '');
+}
+function perform(event) {
+  try { commit(appendEvent(game, { ...event, at: new Date().toISOString() })); }
+  catch(e) { toast(e.message || 'Could not record this play.'); }
+}
+function downloadGame() {
+  const json = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(json);
+  const link = document.createElement('a'); link.href = url; link.download = `opensideline-${new Date().toISOString().slice(0,10)}.json`; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Game file exported. Keep youth-player information private.');
+}
+app.addEventListener('click', event => {
+  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance]');
+  if (!trigger) {
+    if (showSetup && event.target.classList.contains('modal-backdrop')) { showSetup = false; render(); }
+    return;
+  }
+  if (trigger.disabled) return;
+  if (trigger.dataset.action) return perform({type:trigger.dataset.action});
+  if (trigger.dataset.result) return perform({type:'BALL_IN_PLAY',result:trigger.dataset.result});
+  if (trigger.dataset.advance) return perform({type:trigger.dataset.kind,from:Number(trigger.dataset.advance)});
+  if (trigger.dataset.tab) { selectedTab=trigger.dataset.tab; render(); return; }
+  switch (trigger.dataset.command) {
+    case 'undo': if (game.events.length) commit(undoEvent(game)); break;
+    case 'export': downloadGame(); break;
+    case 'open-setup': showSetup = true; render(); break;
+    case 'close-setup': showSetup = false; render(); break;
+    case 'show-stats': selectedTab = 'stats'; document.querySelector('.timeline-card')?.scrollIntoView({behavior:'smooth'}); render(); break;
+    case 'toggle-advanced': showMoreActions = !showMoreActions; render(); break;
+  }
+});
+app.addEventListener('submit', e => {
+  if (e.target.id !== 'setup-form') return;
+  e.preventDefault();
+  if (game.events.length && !confirm('Start a new game? Current plays will be cleared.')) return;
+  const form = new FormData(e.target);
+  try {
+    const next = createGame({ homeName: form.get('homeName'), awayName: form.get('awayName'), homeRoster: parseRoster(form.get('homeRoster'),'home'), awayRoster: parseRoster(form.get('awayRoster'),'away') });
+    showSetup=false; selectedTab='plays'; showMoreActions=false;
+    commit(next); toast('New game created. Ready for the first pitch.');
+  } catch(e) { toast(e.message); }
+});
+window.addEventListener('storage', e => { if (e.key === STORAGE_KEY) { game = readStoredGame(); render(); } });
+channel?.addEventListener('message', e => {
+  if (e.data?.from === TAB_ID || !e.data?.game) return;
+  try { replayGame(e.data.game); game = e.data.game; render(); } catch { /* discard malformed messages */ }
+});
+render();
+
+</script>
+</body>
+</html>
