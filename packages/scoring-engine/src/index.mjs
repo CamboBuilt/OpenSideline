@@ -8,6 +8,8 @@
  */
 import { applyExplicitPlay } from './advancement.mjs';
 import { validateFieldingAnnotation, describeFielding } from './fielding.mjs';
+import { emptyDefensiveLineup, validateDefensiveLineup } from './defensive-lineup.mjs';
+export { emptyDefensiveLineup } from './defensive-lineup.mjs';
 export { FIELDING_POSITIONS, HIT_LOCATIONS } from './fielding.mjs';
 export { defaultPlayAdvances } from './advancement.mjs';
 export const ENGINE_VERSION = '0.2.0';
@@ -17,7 +19,7 @@ export const PLAY_RESULTS = Object.freeze({
   ERROR: 'Reached on error', SAC_FLY: 'Sacrifice fly',
   FIELDERS_CHOICE: "Fielder's choice",
 });
-const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT', 'PLAY_ANNOTATION']);
+const EVENT_TYPES = new Set(['BALL', 'STRIKE', 'FOUL', 'BALL_IN_PLAY', 'WALK', 'HBP', 'STOLEN_BASE', 'ADVANCE_RUNNER', 'RUNNER_OUT', 'PLAY_ANNOTATION', 'DEFENSIVE_LINEUP']);
 const STATS = () => ({ PA: 0, AB: 0, H: 0, R: 0, RBI: 0, BB: 0, SO: 0, HBP: 0, doubles: 0, triples: 0, HR: 0, SF: 0, SB: 0, CS: 0 });
 const assert = (condition, text) => { if (!condition) throw new Error(text); };
 const sanitize = (str, max = 50) => String(str ?? '').trim().slice(0, max);
@@ -58,6 +60,7 @@ function freshView(game) {
     scores: { home: 0, away: 0 }, hits: { home: 0, away: 0 }, errors: { home: 0, away: 0 },
     lineScore: { home: {}, away: {} },
     battingIndex: { home: 0, away: 0 },
+    defenseLineup: {home:emptyDefensiveLineup(),away:emptyDefensiveLineup()},
     playerStats: {
       home: Object.fromEntries(game.teams.home.roster.map(p => [p.id, STATS()])),
       away: Object.fromEntries(game.teams.away.roster.map(p => [p.id, STATS()])),
@@ -125,6 +128,9 @@ function addLog(s, event, label, prior, game) {
     inning: prior.inning, half: prior.half,
     offense: prior.half === 'top' ? game.teams.away.name : game.teams.home.name,
     label,
+    ...(event.type === 'BALL_IN_PLAY'
+      ? {defenseAssignments:{...s.defenseLineup[prior.half==='top' ? 'home' : 'away']}}
+      : {}),
   });
 }
 function process(s, game, event) {
@@ -134,6 +140,14 @@ function process(s, game, event) {
   const team = battingSide(s), defense = fieldingSide(s);
   let label = '';
   switch (event.type) {
+    case 'DEFENSIVE_LINEUP': {
+      assert(event.side === 'home' || event.side === 'away', 'Choose the home or away team.');
+      s.defenseLineup[event.side] = validateDefensiveLineup(
+        event.assignments, game.teams[event.side].roster
+      );
+      label = 'Defensive lineup updated';
+      break;
+    }
     case 'BALL':
       s.balls++;
       if (s.balls === 4) {
@@ -231,9 +245,15 @@ function process(s, game, event) {
       const defend=log.half==='top' ? 'home' : 'away';
       const roster=game.teams[defend].roster;
       const details=validateFieldingAnnotation(event.fielding,roster);
-      log.fielding=details;
+      const snapshot=log.defenseAssignments ?? emptyDefensiveLineup();
+      const resolved={ ...details,
+        sequence:details.sequence.map(step=>({
+          position:step.position,
+          playerId:step.playerId ?? snapshot[String(step.position)] ?? null,
+        })) };
+      log.fielding=resolved;
       log.baseLabel ??= log.label;
-      log.label=`${log.baseLabel} • ${describeFielding(details,roster)}`;
+      log.label=`${log.baseLabel} • ${describeFielding(resolved,roster)}`;
       label='Fielding details updated';
       break;
     }
@@ -248,7 +268,7 @@ function process(s, game, event) {
       break;
     }
   }
-  if (event.type !== 'PLAY_ANNOTATION') addLog(s, event, label, prev, game);
+  if (event.type !== 'PLAY_ANNOTATION' && event.type !== 'DEFENSIVE_LINEUP') addLog(s, event, label, prev, game);
   s.eventCount++;
   return s;
 }

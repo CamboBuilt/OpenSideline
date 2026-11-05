@@ -310,3 +310,48 @@ button:disabled { opacity:.45; }
  .fielding-shortcut button{width:100%}
  .fielding-position-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
+
+
+/* v0.2.4 — fast defensive lineup assignments and roster import */
+.card-top-tools{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.defense-open{background:#e3f5eb;border-color:#b4d9c5;color:#0c7457;min-height:32px;font-size:11px}
+.defense-open:hover{background:#cef0dd}
+.defense-modal{width:min(900px,100%)}
+.defense-team-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.defense-team-switch button{border:1px solid #bdd9ca;border-radius:10px;min-height:46px;background:#f3faf6;color:#356858;font-size:12px;font-weight:800;padding:10px 13px}
+.defense-team-switch button.selected{background:#087d62;color:white;border-color:#087d62}
+.defense-field{display:grid;grid-template-areas:"lf cf rf" "third short second" "first pitcher firstbase" ". catcher .";grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,auto);gap:8px;padding:26px 15px 19px;margin-top:13px;position:relative;isolation:isolate;overflow:hidden;border-radius:15px;border:1px solid #a7d0b7;background:linear-gradient(180deg,#bee3cb,#d3eddc 65%,#edf7e9)}
+.defense-grass{position:absolute;inset:-32% -20%;border-radius:50%;border:2px solid #95c6a1;background:repeating-conic-gradient(from 0deg at 50% 78%,#bce2c5 0deg 14deg,#d0ead4 14deg 28deg);z-index:-1;opacity:.6}
+.defense-slot{border:1px solid #add3c1;border-radius:10px;background:#ffffffdf;padding:9px 11px;min-width:0;box-shadow:0 2px 7px #22523812}
+.defense-slot label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12px;color:#075a43;margin-bottom:6px}
+.defense-slot label strong{font-weight:900;white-space:nowrap}
+.defense-slot label small{font-size:10px;color:#5d8473}
+.defense-slot select{width:100%;max-width:100%;min-height:38px;border-radius:8px;border:1px solid #c1dbcf;color:#214c3a;background:white;font-size:11px;padding:7px 4px;font-weight:650}
+.defense-slot select:focus-visible{outline:3px solid #e4ad42;outline-offset:2px}
+.defense-slot-7{grid-area:lf}.defense-slot-8{grid-area:cf}.defense-slot-9{grid-area:rf}
+.defense-slot-5{grid-area:third}.defense-slot-6{grid-area:short}.defense-slot-4{grid-area:second}
+.defense-slot-3{grid-area:firstbase}.defense-slot-1{grid-area:pitcher}.defense-slot-2{grid-area:catcher}
+.defense-summary{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:#366b55}
+.defense-summary button{font-size:11px;color:#a34533;text-decoration:underline;background:none;border:0}
+.defense-import{display:flex;flex-direction:column;gap:7px;margin-top:16px;padding:12px;border:1px dashed #aed7c2;background:#f4faf6;border-radius:10px}
+.import-control-row{margin:11px 0}
+.import-file-label{display:block;font-size:11px;font-weight:800;color:#246b50;letter-spacing:0;margin:0 0 7px;cursor:pointer}
+.import-file-label input{display:block;margin-top:7px;width:100%;font-size:12px;max-width:100%;cursor:pointer}
+.import-status,.defense-import #defense-import-status{font-size:11px;color:#087d62;line-height:1.5;display:block}
+.import-status.import-error,#defense-import-status.import-error{color:#ab392d}
+.import-hint{font-size:11px;line-height:1.55;color:#638577;margin-top:7px}
+.setup-team{min-width:0}
+.setup-team label[for$="-roster"]{margin-top:13px}
+.template-button{font-size:11px;margin-top:13px;min-height:34px}
+@media(max-width:700px){
+  .defense-modal{max-height:95dvh;overflow:auto;padding:17px 12px}
+  .defense-field{gap:5px;padding:13px 6px}
+  .defense-slot{padding:6px 5px;border-radius:8px}
+  .defense-slot label{font-size:10px;gap:3px}
+  .defense-slot label small{display:none}
+  .defense-slot select{font-size:10px;padding:6px 2px;min-height:37px}
+  .defense-team-switch{gap:6px}
+  .defense-team-switch button{font-size:11px;padding:6px 4px}
+  .card-top-tools{gap:5px}
+  .card-top-tools .pill{display:none}
+}

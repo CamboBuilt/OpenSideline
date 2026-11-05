@@ -28,6 +28,16 @@ You can also use Python's static server (`python3 -m http.server 5173`) from the
 
 Issue #1 introduces a play decision form for every occupied base, explicit RBI decisions and fielder's choices, with event replay and undo retaining compatibility with old exports. See the [scoring event contract](docs/SCORING-EVENTS.md). **This is still a prototype**, not an official scorebook; scored runs on plays producing the third out are deliberately blocked pending timing/force-out support.
 
+## v0.2.4: Defensive lineup + roster imports (preview)
+
+- **Defense** opens a 9-position field layout for either team. Choose the actual defender at each position and save whenever players switch positions. This is recorded in the game journal, not inferred from batting order.
+- On a batted-ball play, OpenSideline remembers the **defensive assignments that existed when the ball was hit**. Later fielding annotations like 6–3 automatically resolve to those players, even if the defense has since changed. You can still override a player manually.
+- **Setup → Import CSV/JSON** can load a team roster and batting order, plus optional starting fielding positions. **Defense → Import CSV/JSON** maps the position data to already rostered players by jersey number and name.
+- Download a sample roster CSV inside Setup; see [Roster import guide](docs/ROSTER-IMPORT.md).
+- Imports stay in this browser. Changing an established roster via Setup starts a **new game** and clears earlier play events; export the game before replacing rosters.
+
+**Limitations:** The importer accepts standard CSV/JSON—not proprietary GameChanger formats directly. Player substitutions and official fielding putout/assist calculations still need separate scoring logic.
+
 ## v0.2.3: Fielding positions + ball location (preview)
 
 After a hit or out, select **Add fielding** next to the last batted-ball play, or choose **Fielding details** on an earlier play in the game history. Tap a location on the field and tap the numbered fielders in the sequence of their involvement (e.g. 6–3 or 4–6–3); assign actual defender names from the defensive team's roster. Common defensive chains are one-tap presets. Marking these details is optional to preserve fast scoring.
