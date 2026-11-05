@@ -146,16 +146,16 @@ function renderScorer(v) {
   const batter = v.batter;
   return `<div class="shell">
     <aside class="sidebar"><div class="brand"><span class="brand-logo">${icon('baseball',28)}</span><div>Open<span>Sideline</span><small>SPORTS, OPEN TO ALL</small></div></div>
-      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
+      <div class="nav-label">WORKSPACE</div><nav><button class="nav-item selected">${icon('grid',19)} Game center <span class="nav-indicator"></span></button><button class="nav-item" data-command="open-setup">${icon('people',19)} Teams & rosters</button><button class="nav-item" data-command="open-defense">${icon('grid',19)} Defensive lineup</button><button class="nav-item" data-command="open-lineup">${icon('people',19)} Batting & substitutions</button><button class="nav-item" data-command="show-stats">${icon('stats',19)} Player stats</button></nav>
       <div class="nav-label resources">LIVE VIEWS</div><nav><a class="nav-item" href="?view=spectator" target="_blank" rel="noopener">${icon('radio',19)} Spectator view ${icon('external',13)}</a><a class="nav-item" href="?view=overlay" target="_blank" rel="noopener">${icon('grid',19)} OBS overlay ${icon('external',13)}</a></nav>
       <div class="sidebar-bottom"><div class="opensource-tag"><span class="green-dot"></span> OPEN-SOURCE MVP</div><div class="sidebar-version">Baseball scoring • v0.2.3 preview</div></div>
     </aside>
-    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
+    <main class="main"><div class="topbar"><div class="crumb">BASEBALL <span>/</span> GAME CENTER</div><div class="topbar-actions"><span class="live-tag"><span class="green-dot"></span> LOCAL GAME</span><button class="btn subtle" data-command="export">${icon('share',16)} Export</button><button class="btn subtle" data-command="open-defense" title="Edit defensive lineup">${icon('grid',16)} Defense</button><button class="btn subtle" data-command="open-lineup">${icon('people',16)} Lineup</button><button class="btn subtle" data-command="open-setup">${icon('settings',16)} Setup</button></div></div>
       <div class="content"><div class="page-heading"><div><div class="eyebrow">THE GAME IS ON</div><h1>Live scorer<span class="accent-dot">.</span></h1><p>Keep your eyes on the game, not the menus.</p></div><button class="btn undo" data-command="undo" ${game.events.length ? '' : 'disabled'}>${icon('undo',16)} Undo last action</button></div>
       <div class="sticky-hud">${scoreHeader(v,true)}<div class="hud-bottom"><span>AT BAT <strong>${safe(v.batter.name)}</strong></span><span class="hud-count">COUNT ${v.balls}–${v.strikes} · ${v.outs} OUT</span><span class="hud-runners">ON BASE ${[1,2,3].map(b => `<b class="${v.bases[b] ? 'active' : ''}" aria-label="${['','First','Second','Third'][b]} base ${v.bases[b] ? 'occupied' : 'empty'}">${b}</b>`).join('')}</span></div></div>
       <div class="work-grid"><section class="card play-card"><div class="card-top"><div class="section-label">AT BAT</div><div class="card-top-tools"><button type="button" class="btn defense-open" data-command="open-defense">Defense ${icon('arrow',13)}</button><span class="pill">${safe(game.teams[v.batting].name)}</span></div></div>
         <div class="at-bat-strip">
-          <div class="batter-block"><div class="batter-avatar">${safe(batter.number || '—')}</div><div><div class="batter-title">${safe(batter.name)}</div><div class="batter-sub">${safe(game.teams[v.batting].name)} · Batting #${(v.battingIndex[v.batting] % game.teams[v.batting].roster.length) + 1}</div></div></div>
+          <div class="batter-block"><div class="batter-avatar">${safe(batter.number || '—')}</div><div><div class="batter-title">${safe(batter.name)}</div><div class="batter-sub">${safe(game.teams[v.batting].name)} · Batting #${(v.battingIndex[v.batting] % v.battingOrder[v.batting].length) + 1} of ${v.battingOrder[v.batting].length}</div></div></div>
           <div class="mini-field" aria-label="Current baserunners">${renderBases(v)}<div class="runner-summary">${[1,2,3].filter(base => v.bases[base]).map(base => `<span>${['','1B','2B','3B'][base]}: ${safe(v.bases[base].name)}</span>`).join('') || '<span>Bases empty</span>'}</div></div>
         </div>
         <div class="control-wrap">${playActions(v)}</div>
@@ -458,12 +458,13 @@ function downloadGame() {
   toast('Game file exported. Keep youth-player information private.');
 }
 app.addEventListener('click', event => {
-  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset],button[data-defense-team]');
+  const trigger = event.target.closest('button[data-action],button[data-result],button[data-command],button[data-tab],button[data-advance],button[data-preset],button[data-hit-location],button[data-fielder-position],button[data-chain-preset],button[data-defense-team],button[data-lineup-team]');
   if (!trigger) {
-    if (event.target.classList.contains('modal-backdrop')) { showSetup = false; showPlay = null; fieldingDraft=null; defenseDraft=null; render(); }
+    if (event.target.classList.contains('modal-backdrop')) { showSetup=false; showPlay=null; fieldingDraft=null; defenseDraft=null; showLineup=false; render(); }
     return;
   }
   if (trigger.disabled) return;
+  if(showLineup&&trigger.dataset.lineupTeam){lineupSide=trigger.dataset.lineupTeam;render();return;}
   if (defenseDraft && trigger.dataset.defenseTeam) {
     openDefenseEditor(trigger.dataset.defenseTeam); return;
   }
@@ -505,8 +506,10 @@ app.addEventListener('click', event => {
   switch (trigger.dataset.command) {
     case 'undo': if (game.events.length) commit(undoEvent(game)); break;
     case 'export': downloadGame(); break;
-    case 'open-setup': showSetup = true; showPlay = null; fieldingDraft=null; defenseDraft=null; importedSetupPlayers={home:null,away:null}; render(); break;
-    case 'open-defense': openDefenseEditor(replayGame(game).fielding);break;
+    case 'open-setup': showSetup=true;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;importedSetupPlayers={home:null,away:null};render();break;
+    case 'open-defense': showLineup=false;openDefenseEditor(replayGame(game).fielding);break;
+    case 'open-lineup': showLineup=true;lineupSide=replayGame(game).batting;showSetup=false;fieldingDraft=null;defenseDraft=null;showPlay=null;render();break;
+    case 'close-lineup': showLineup=false;render();break;
     case 'close-defense': defenseDraft=null;render();break;
     case 'clear-defense': if(defenseDraft){defenseDraft.assignments=Object.fromEntries(Array.from({length:9},(_,i)=>[String(i+1),null]));render();}break;
     case 'download-roster-template': downloadRosterTemplate();break;
@@ -521,6 +524,24 @@ app.addEventListener('click', event => {
   }
 });
 app.addEventListener('change', async e => {
+  if(e.target.matches('#game-preset')){
+    const preset=LEAGUE_PRESETS[e.target.value];if(!preset)return;
+    const mode=document.querySelector('#batting-mode'),innings=document.querySelector('#game-innings'),reentry=document.querySelector('#game-reentry');
+    if(mode)mode.value=preset.battingMode;if(innings)innings.value=preset.innings;
+    if(reentry)reentry.checked=preset.allowReentry;
+    for(const side of ['away','home']){
+      const list=document.querySelector('#'+side+'-roster'),input=document.querySelector('#'+side+'-order');
+      if(input&&list){const rs=parseRoster(list.value,side);input.value=(preset.battingMode==='nine'?rs.slice(0,9):rs).map(p=>p.number).join(', ');}
+    }
+    return;
+  }
+  if(e.target.matches('#batting-mode')){
+    for(const side of ['away','home']){
+      const list=document.querySelector('#'+side+'-roster'),input=document.querySelector('#'+side+'-order');
+      if(input&&list){const rs=parseRoster(list.value,side);input.value=(e.target.value==='nine'?rs.slice(0,9):rs).map(p=>p.number).join(', ');}
+    }
+    return;
+  }
   if (e.target.matches('[data-roster-import]')) {
     const side=e.target.dataset.rosterImport,file=e.target.files?.[0];
     if (!file || !['home','away'].includes(side)) return;
@@ -532,6 +553,12 @@ app.addEventListener('change', async e => {
       const textArea=document.querySelector('#'+side+'-roster'),teamName=document.querySelector('#'+side+'-name');
       if(!textArea||!teamName)return;
       textArea.value=importedRosterText(parsed.players);
+      const orderInput=document.querySelector('#'+side+'-order');
+      if(orderInput){
+        const mode=document.querySelector('#batting-mode')?.value??'continuous';
+        const choices=mode==='nine'?parsed.players.slice(0,9):parsed.players;
+        orderInput.value=choices.map(p=>p.number).join(', ');
+      }
       if(parsed.teamName)teamName.value=parsed.teamName;
       importedSetupPlayers[side]=parsed.players;
       if(box){box.textContent='Imported '+parsed.players.length+' players; '+parsed.players.filter(p=>p.position!==null).length+' starting positions.';box.classList.remove('import-error');}
@@ -573,6 +600,23 @@ app.addEventListener('change', async e => {
   }
 });
 app.addEventListener('submit', e => {
+  if(e.target.matches('[data-substitution-slot]')){
+    e.preventDefault();
+    const slot=Number(e.target.dataset.substitutionSlot),form=new FormData(e.target);
+    if(!form.get('playerId'))return;
+    perform({type:'LINEUP_SUBSTITUTION',side:lineupSide,slot,playerId:form.get('playerId'),kind:form.get('kind')});
+    return;
+  }
+  if(e.target.id==='pinch-runner-form'){
+    e.preventDefault();const form=new FormData(e.target);
+    perform({type:'PINCH_RUNNER',from:Number(form.get('base')),playerId:form.get('playerId')});
+    return;
+  }
+  if(e.target.id==='pitcher-change-form'){
+    e.preventDefault();const form=new FormData(e.target);
+    perform({type:'PITCHER_CHANGE',side:lineupSide,playerId:form.get('playerId')});
+    return;
+  }
   if(e.target.id==='defense-form'){
     e.preventDefault();
     if(!defenseDraft)return;
@@ -622,14 +666,23 @@ app.addEventListener('submit', e => {
   if (game.events.length && !confirm('Start a new game? Current plays will be cleared.')) return;
   const form = new FormData(e.target);
   try {
-    let next = createGame({ homeName: form.get('homeName'), awayName: form.get('awayName'), homeRoster: parseRoster(form.get('homeRoster'),'home'), awayRoster: parseRoster(form.get('awayRoster'),'away') });
+    const awayRoster=parseRoster(form.get('awayRoster'),'away');
+    const homeRoster=parseRoster(form.get('homeRoster'),'home');
+    const battingMode=form.get('battingMode');
+    const rules={preset:form.get('preset'),battingMode,
+      innings:Number(form.get('innings')),allowReentry:form.get('allowReentry')==='on'};
+    let next=createGame({homeName:form.get('homeName'),awayName:form.get('awayName'),
+      homeRoster,awayRoster,rules,
+      homeBattingOrder:selectedBatters(homeRoster,form.get('homeOrder'),battingMode),
+      awayBattingOrder:selectedBatters(awayRoster,form.get('awayOrder'),battingMode)});
+
     for(const side of ['away','home']){
       if(!importedSetupPlayers[side])continue;
       const assignments=matchImportedDefense(next.teams[side].roster, importedSetupPlayers[side]);
       if(Object.keys(assignments).length)next=appendEvent(next,{type:'DEFENSIVE_LINEUP',side,assignments,at:new Date().toISOString()});
     }
     importedSetupPlayers={home:null,away:null};
-    showSetup=false; showPlay=null; fieldingDraft=null; defenseDraft=null; selectedTab='plays'; showMoreActions=false;
+    showSetup=false;showPlay=null;fieldingDraft=null;defenseDraft=null;showLineup=false;selectedTab='plays'; showMoreActions=false;
     commit(next); toast('New game created. Ready for the first pitch.');
   } catch(e) { toast(e.message); }
 });
